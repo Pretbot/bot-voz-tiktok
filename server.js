@@ -13,11 +13,9 @@ const log = {
     ok:    (msg, ...args) => console.log(`[${new Date().toISOString()}] [OK]    ${msg}`, ...args),
 };
 
-// ─── Contrasena de admin ──────────────────────────────────────────────────────
-// Cambia aqui o usa:  ADMIN_PASSWORD=miClave node server.js
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234';
 
-// ─── Configuracion global (solo el admin la cambia, todos la reciben) ─────────
+// ─── Configuracion global ─────────────────────────────────────────────────────
 let globalConfig = {
     maxQueue:  50,
     maxWords:  0,
@@ -43,6 +41,7 @@ const rooms = new Map();
 const RECONNECT_DELAY_MS = 5_000;
 const MAX_RECONNECTS     = 5;
 
+// ─── Enqueue comentario ───────────────────────────────────────────────────────
 function enqueue(username, usuario, mensaje) {
     const room = rooms.get(username);
     if (!room) return;
@@ -55,6 +54,17 @@ function enqueue(username, usuario, mensaje) {
     log.ok(`[${username}] ${usuario}: ${mensaje.slice(0, 50)}`);
 }
 
+// ─── Enqueue regalo ───────────────────────────────────────────────────────────
+function enqueueGift(username, usuario) {
+    const room = rooms.get(username);
+    if (!room) return;
+    if (room.queue.length >= globalConfig.maxQueue) return;
+    // Emite evento especial de regalo al frontend
+    io.to(username).emit('nuevo-regalo', { usuario });
+    log.ok(`[${username}] REGALO de ${usuario}`);
+}
+
+// ─── Conexion TikTok Live ─────────────────────────────────────────────────────
 function connectToLive(username, reconnectCount = 0) {
     const room = rooms.get(username);
     if (!room) return;
@@ -72,12 +82,24 @@ function connectToLive(username, reconnectCount = 0) {
             scheduleReconnect(username, reconnectCount);
         });
 
+    // Comentarios de chat
     conn.on('chat', (data) => enqueue(username, data.nickname, data.comment));
+
+    // Regalos — solo se procesa cuando el regalo está "completado" (streakFinished)
+    // para no repetir el agradecimiento en cada tick del streak
+    conn.on('gift', (data) => {
+        const nombre = data.nickname || data.uniqueId || 'alguien';
+        // giftType 1 = regalo de streak (se repite), esperamos a que termine
+        if (data.giftType === 1 && !data.repeatEnd) return;
+        enqueueGift(username, nombre);
+    });
+
     conn.on('disconnected', () => {
         log.warn(`[${username}] Desconectado`);
         io.to(username).emit('status', { type: 'reconnecting', message: `Reconectando a @${username}...` });
         scheduleReconnect(username, reconnectCount);
     });
+
     conn.on('error', (err) => log.error(`[${username}]: ${err.message}`));
 }
 
@@ -139,10 +161,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('admin-set-config', (newConfig) => {
-        if (!isAdmin) {
-            socket.emit('status', { type: 'error', message: 'No autorizado' });
-            return;
-        }
+        if (!isAdmin) { socket.emit('status', { type: 'error', message: 'No autorizado' }); return; }
         const rules = {
             maxQueue: [1,   500],
             maxWords: [0,   100],
@@ -153,11 +172,10 @@ io.on('connection', (socket) => {
         for (const [key, [min, max]] of Object.entries(rules)) {
             if (newConfig[key] !== undefined) {
                 const val = parseFloat(newConfig[key]);
-                if (!isNaN(val) && val >= min && val <= max)
-                    globalConfig[key] = val;
+                if (!isNaN(val) && val >= min && val <= max) globalConfig[key] = val;
             }
         }
-        log.ok('Config global actualizada:', JSON.stringify(globalConfig));
+        log.ok('Config actualizada:', JSON.stringify(globalConfig));
         io.emit('config-update', globalConfig);
         socket.emit('admin-config-saved', globalConfig);
     });
