@@ -22,15 +22,11 @@
     --glow-g:  0 0 16px rgba(245,200,66,.3);
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   body {
     background: var(--bg); color: var(--text);
     font-family: 'Syne', sans-serif; min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center;
-    overflow-x: hidden;
+    display: flex; flex-direction: column; align-items: center; overflow-x: hidden;
   }
-
-  /* Fondo animado */
   body::before {
     content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background:
@@ -38,13 +34,14 @@
       radial-gradient(ellipse 50% 50% at 90% 80%, rgba(105,201,208,.06) 0%, transparent 70%);
   }
 
-  /* ── Login ───────────────────────────────────────────────────────────────── */
+  .icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* ── Login ─────────────────────────────────────────────────────────────── */
   #login-screen {
     position: fixed; inset: 0; z-index: 50;
     display: flex; align-items: center; justify-content: center;
     background: var(--bg);
   }
-
   .login-box {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 16px; padding: 2.5rem 2rem; width: 340px;
@@ -54,29 +51,27 @@
   }
   @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 
-  .login-title {
-    text-align: center;
-  }
+  .login-title { text-align: center; }
   .login-title .eyebrow {
-    font-family: 'Space Mono', monospace; font-size: .65rem;
-    letter-spacing: .15em; text-transform: uppercase; color: var(--gold);
-    display: block; margin-bottom: .5rem;
+    display: flex; align-items: center; justify-content: center; gap: .4rem;
+    font-family: 'Space Mono', monospace; font-size: .62rem;
+    letter-spacing: .15em; text-transform: uppercase; color: var(--gold); margin-bottom: .5rem;
   }
   .login-title h1 {
     font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
-  .login-title p { font-size: .82rem; color: var(--muted); margin-top: .4rem; }
+  .login-title p { font-size: .8rem; color: var(--muted); margin-top: .4rem; }
 
   .login-field {
     display: flex; align-items: center; background: var(--bg);
     border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: border-color .2s;
   }
   .login-field:focus-within { border-color: var(--gold); box-shadow: var(--glow-g); }
-  .login-field .icon {
-    padding: 0 .9rem; font-size: 1rem; color: var(--gold); user-select: none;
-    border-right: 1px solid var(--border);
+  .login-field .field-icon {
+    padding: 0 .9rem; color: var(--gold);
+    border-right: 1px solid var(--border); display: flex; align-items: center;
   }
   .login-field input {
     flex: 1; background: transparent; border: none; outline: none;
@@ -87,33 +82,35 @@
     width: 100%; padding: .9rem; border-radius: 10px; border: none;
     background: var(--gold); color: #000; font-family: 'Syne', sans-serif;
     font-size: .95rem; font-weight: 800; cursor: pointer; transition: all .2s;
-    letter-spacing: .02em;
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
   }
   .btn-login:hover { filter: brightness(1.1); transform: translateY(-1px); }
   .btn-login:active { transform: translateY(0); }
 
   .login-error {
-    text-align: center; font-size: .8rem; color: var(--accent);
-    font-family: 'Space Mono', monospace; display: none;
+    display: none; align-items: center; justify-content: center; gap: .4rem;
+    text-align: center; font-size: .78rem; color: var(--accent);
+    font-family: 'Space Mono', monospace;
     animation: shake .3s ease;
   }
-  @keyframes shake {
-    0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
-  }
+  .login-error.show { display: flex; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
 
-  /* ── Admin Panel ─────────────────────────────────────────────────────────── */
+  /* ── Admin Panel ───────────────────────────────────────────────────────── */
   #admin-panel { display: none; width: 100%; max-width: 900px; padding: 2rem 1.5rem; z-index: 1; }
 
   header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);
   }
-  .logo-area { display: flex; flex-direction: column; gap: .2rem; }
+  .logo-area { display: flex; flex-direction: column; gap: .25rem; }
   .logo-eyebrow {
-    font-family: 'Space Mono', monospace; font-size: .6rem; letter-spacing: .15em;
-    text-transform: uppercase; color: var(--gold);
+    display: flex; align-items: center; gap: .35rem;
+    font-family: 'Space Mono', monospace; font-size: .6rem;
+    letter-spacing: .15em; text-transform: uppercase; color: var(--gold);
   }
   .logo {
+    display: flex; align-items: center; gap: .5rem;
     font-size: 1.5rem; font-weight: 800;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
@@ -121,85 +118,83 @@
   .logo span { font-family: 'Space Mono', monospace; font-size: .85em; }
 
   .header-right { display: flex; align-items: center; gap: 1rem; }
-  .live-dot {
-    display: flex; align-items: center; gap: .5rem;
-    font-family: 'Space Mono', monospace; font-size: .7rem; color: var(--accent2);
+  .live-badge {
+    display: flex; align-items: center; gap: .45rem;
+    font-family: 'Space Mono', monospace; font-size: .68rem; color: var(--accent2);
+    border: 1px solid rgba(105,201,208,.25); border-radius: 20px; padding: .3rem .75rem;
   }
-  .live-dot::before {
-    content: ''; width: 8px; height: 8px; border-radius: 50%;
+  .live-dot-pulse {
+    width: 7px; height: 7px; border-radius: 50%;
     background: var(--accent2); box-shadow: var(--glow2); animation: pulse 2s infinite;
   }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
 
   .btn-logout {
-    font-family: 'Space Mono', monospace; font-size: .7rem; background: none;
+    display: flex; align-items: center; gap: .4rem;
+    font-family: 'Space Mono', monospace; font-size: .68rem; background: none;
     border: 1px solid var(--border); color: var(--muted); padding: .4rem .9rem;
     border-radius: 6px; cursor: pointer; transition: all .2s; letter-spacing: .05em;
   }
   .btn-logout:hover { color: var(--accent); border-color: var(--accent); }
 
-  /* Grid de controles */
-  .controls-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
-    margin-bottom: 1.5rem;
+  /* Rooms */
+  .rooms-section { margin-bottom: 1.5rem; }
+  .rooms-title {
+    display: flex; align-items: center; gap: .4rem;
+    font-family: 'Space Mono', monospace; font-size: .62rem;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: .75rem;
   }
+  .rooms-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .room-chip {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: .32rem .9rem; font-family: 'Space Mono', monospace; font-size: .68rem;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .room-chip .rname { color: var(--accent); }
+  .room-chip .rsock { color: var(--muted); }
+  .no-rooms { font-size: .78rem; color: var(--muted); font-family: 'Space Mono', monospace; }
 
-  @media (max-width: 600px) { .controls-grid { grid-template-columns: 1fr; } }
+  /* Controls grid */
+  .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.5rem; }
+  @media (max-width:600px) { .controls-grid { grid-template-columns: 1fr; } }
 
   .control-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 14px; padding: 1.4rem 1.3rem;
-    display: flex; flex-direction: column; gap: 1rem;
-    transition: border-color .2s;
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.35rem 1.25rem; display: flex; flex-direction: column; gap: 1rem;
+    transition: border-color .25s;
   }
-  .control-card:hover { border-color: rgba(105,201,208,.2); }
+  .control-card:hover { border-color: rgba(105,201,208,.18); }
 
-  .card-header {
-    display: flex; align-items: center; gap: .75rem;
-  }
+  .card-header { display: flex; align-items: center; gap: .75rem; }
   .card-icon {
-    width: 34px; height: 34px; border-radius: 9px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem; flex-shrink: 0;
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
-  .icon-red   { background: rgba(254,44,85,.12); }
-  .icon-teal  { background: rgba(105,201,208,.12); }
-  .icon-gold  { background: rgba(245,200,66,.12); }
-  .icon-purple{ background: rgba(180,100,255,.12); }
+  .icon-red    { background: rgba(254,44,85,.12);   color: var(--accent); }
+  .icon-teal   { background: rgba(105,201,208,.12); color: var(--accent2); }
+  .icon-gold   { background: rgba(245,200,66,.12);  color: var(--gold); }
+  .icon-purple { background: rgba(180,100,255,.12); color: #b464ff; }
 
-  .card-title {
-    font-weight: 700; font-size: .92rem; letter-spacing: -.01em;
-  }
-  .card-desc {
-    font-size: .72rem; color: var(--muted); margin-top: .1rem;
-    font-family: 'Space Mono', monospace;
-  }
+  .card-title { font-weight: 700; font-size: .9rem; letter-spacing: -.01em; }
+  .card-desc  { font-size: .7rem; color: var(--muted); margin-top: .1rem; font-family: 'Space Mono', monospace; }
 
-  /* Slider dentro de card */
-  .ctrl-slider { display: flex; flex-direction: column; gap: .5rem; }
+  .ctrl-slider { display: flex; flex-direction: column; gap: .45rem; }
   .ctrl-slider-header { display: flex; justify-content: space-between; align-items: center; }
-  .ctrl-label { font-size: .75rem; color: var(--muted); font-family: 'Space Mono', monospace; }
-  .ctrl-val {
-    font-family: 'Space Mono', monospace; font-size: .78rem;
-    color: var(--gold); font-weight: 700; min-width: 55px; text-align: right;
-  }
+  .ctrl-label { display: flex; align-items: center; gap: .35rem; font-size: .72rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .ctrl-val { font-family: 'Space Mono', monospace; font-size: .75rem; color: var(--gold); font-weight: 700; min-width: 60px; text-align: right; }
 
   input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; height: 5px; }
-  input[type=range]::-webkit-slider-runnable-track {
-    background: var(--border); height: 5px; border-radius: 3px;
-  }
+  input[type=range]::-webkit-slider-runnable-track { background: var(--border); height: 5px; border-radius: 3px; }
   input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
-    background: var(--gold); margin-top: -5.5px; cursor: pointer; box-shadow: var(--glow-g);
-    transition: transform .1s;
+    background: var(--gold); margin-top: -5.5px; cursor: pointer; box-shadow: var(--glow-g); transition: transform .1s;
   }
   input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 
-  /* Input numérico directo */
   .ctrl-number {
     background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: .55rem .75rem; color: var(--text); font-family: 'Space Mono', monospace;
-    font-size: .85rem; width: 100%; outline: none; transition: border-color .2s;
+    padding: .5rem .75rem; color: var(--text); font-family: 'Space Mono', monospace;
+    font-size: .82rem; width: 100%; outline: none; transition: border-color .2s;
   }
   .ctrl-number:focus { border-color: var(--gold); box-shadow: var(--glow-g); }
 
@@ -207,78 +202,91 @@
   .btn-save {
     width: 100%; padding: 1rem; border-radius: 12px; border: none;
     background: linear-gradient(135deg, var(--accent), #c0213d);
-    color: #fff; font-family: 'Syne', sans-serif; font-size: 1rem;
-    font-weight: 800; cursor: pointer; transition: all .2s; letter-spacing: .03em;
-    box-shadow: var(--glow);
+    color: #fff; font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800;
+    cursor: pointer; transition: all .2s; letter-spacing: .02em; box-shadow: var(--glow);
+    display: flex; align-items: center; justify-content: center; gap: .6rem;
   }
   .btn-save:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 6px 24px rgba(254,44,85,.5); }
   .btn-save:active { transform: translateY(0); }
 
-  /* Toast de confirmación */
+  /* Toast */
   .toast {
     position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(80px);
-    background: var(--surface); border: 1px solid rgba(105,201,208,.4);
-    color: var(--accent2); font-family: 'Space Mono', monospace; font-size: .8rem;
-    padding: .75rem 1.5rem; border-radius: 10px; box-shadow: var(--glow2);
+    background: var(--surface); border: 1px solid rgba(105,201,208,.35);
+    color: var(--accent2); font-family: 'Space Mono', monospace; font-size: .78rem;
+    padding: .7rem 1.4rem; border-radius: 10px; box-shadow: var(--glow2);
     transition: transform .35s cubic-bezier(.22,1,.36,1), opacity .35s;
-    opacity: 0; pointer-events: none; z-index: 200; white-space: nowrap;
-  }
-  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-  /* Stats de usuarios en vivo */
-  .rooms-section { margin-bottom: 1.5rem; }
-  .rooms-title {
-    font-family: 'Space Mono', monospace; font-size: .65rem;
-    letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: .75rem;
-  }
-  .rooms-list {
-    display: flex; flex-wrap: wrap; gap: .5rem;
-  }
-  .room-chip {
-    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
-    padding: .35rem .9rem; font-family: 'Space Mono', monospace; font-size: .7rem; color: var(--text);
+    opacity: 0; pointer-events: none; z-index: 200;
     display: flex; align-items: center; gap: .5rem;
   }
-  .room-chip .rname { color: var(--accent); }
-  .room-chip .rsock { color: var(--muted); }
-  .no-rooms { font-size: .8rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 </style>
 </head>
 <body>
 
-<!-- ── Login ────────────────────────────────────────────────────────────────── -->
+<!-- Login -->
 <div id="login-screen">
   <div class="login-box">
     <div class="login-title">
-      <span class="eyebrow">⚙ Panel de administración</span>
-      <h1>TT<span style="font-family:'Space Mono',monospace;font-size:.85em">LIVE</span></h1>
-      <p>Ingresa la contraseña de administrador para continuar</p>
+      <div class="eyebrow">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Panel de administración
+      </div>
+      <h1>TTLIVE</h1>
+      <p>Ingresa la contraseña para continuar</p>
     </div>
     <div class="login-field">
-      <span class="icon">🔑</span>
+      <span class="field-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </span>
       <input type="password" id="password-input" placeholder="Contraseña admin" autocomplete="current-password" />
     </div>
-    <div class="login-error" id="login-error">❌ Contraseña incorrecta</div>
-    <button class="btn-login" id="btn-login">Entrar al panel</button>
+    <div class="login-error" id="login-error">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+      Contraseña incorrecta
+    </div>
+    <button class="btn-login" id="btn-login">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+      Entrar al panel
+    </button>
   </div>
 </div>
 
-<!-- ── Panel Admin ───────────────────────────────────────────────────────────── -->
+<!-- Admin Panel -->
 <div id="admin-panel">
   <header>
     <div class="logo-area">
-      <span class="logo-eyebrow">⚙ Admin Panel</span>
-      <div class="logo">TT<span>LIVE</span></div>
+      <div class="logo-eyebrow">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        Admin Panel
+      </div>
+      <div class="logo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="-webkit-text-fill-color:initial">
+          <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/>
+          <circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/>
+          <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
+        </svg>
+        TT<span>LIVE</span>
+      </div>
     </div>
     <div class="header-right">
-      <span class="live-dot">Conectado</span>
-      <button class="btn-logout" id="btn-logout">Salir</button>
+      <div class="live-badge">
+        <span class="live-dot-pulse"></span>
+        Conectado
+      </div>
+      <button class="btn-logout" id="btn-logout">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        Salir
+      </button>
     </div>
   </header>
 
   <!-- Rooms activos -->
   <div class="rooms-section">
-    <p class="rooms-title">Rooms activos</p>
+    <p class="rooms-title">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Rooms activos
+    </p>
     <div class="rooms-list" id="rooms-list">
       <span class="no-rooms">Sin usuarios conectados</span>
     </div>
@@ -290,15 +298,20 @@
     <!-- Cola del servidor -->
     <div class="control-card">
       <div class="card-header">
-        <div class="card-icon icon-red">📥</div>
+        <div class="card-icon icon-red">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
         <div>
           <div class="card-title">Cola del servidor</div>
-          <div class="card-desc">Comentarios en buffer antes de descartar</div>
+          <div class="card-desc">Buffer antes de descartar mensajes</div>
         </div>
       </div>
       <div class="ctrl-slider">
         <div class="ctrl-slider-header">
-          <span class="ctrl-label">Máximo en cola</span>
+          <span class="ctrl-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+            Máximo en cola
+          </span>
           <span class="ctrl-val" id="val-maxQueue">50</span>
         </div>
         <input type="range" id="ctrl-maxQueue" min="1" max="500" step="1" value="50" />
@@ -309,15 +322,20 @@
     <!-- Límite de palabras -->
     <div class="control-card">
       <div class="card-header">
-        <div class="card-icon icon-teal">✂️</div>
+        <div class="card-icon icon-teal">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+        </div>
         <div>
           <div class="card-title">Límite de palabras TTS</div>
-          <div class="card-desc">0 = sin límite · se lee hasta N palabras</div>
+          <div class="card-desc">0 = sin límite</div>
         </div>
       </div>
       <div class="ctrl-slider">
         <div class="ctrl-slider-header">
-          <span class="ctrl-label">Palabras máx.</span>
+          <span class="ctrl-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>
+            Palabras máx.
+          </span>
           <span class="ctrl-val" id="val-maxWords">Sin límite</span>
         </div>
         <input type="range" id="ctrl-maxWords" min="0" max="100" step="1" value="0" />
@@ -328,15 +346,20 @@
     <!-- Límite de caracteres -->
     <div class="control-card">
       <div class="card-header">
-        <div class="card-icon icon-gold">📏</div>
+        <div class="card-icon icon-gold">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="4" x2="20" y2="20"/><polyline points="9.9 4.9 4 4 4.9 9.9"/><polyline points="14.1 19.1 20 20 19.1 14.1"/></svg>
+        </div>
         <div>
           <div class="card-title">Límite de caracteres TTS</div>
-          <div class="card-desc">0 = sin límite · se lee hasta N caracteres</div>
+          <div class="card-desc">0 = sin límite</div>
         </div>
       </div>
       <div class="ctrl-slider">
         <div class="ctrl-slider-header">
-          <span class="ctrl-label">Chars máx.</span>
+          <span class="ctrl-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+            Chars máx.
+          </span>
           <span class="ctrl-val" id="val-maxChars">Sin límite</span>
         </div>
         <input type="range" id="ctrl-maxChars" min="0" max="500" step="5" value="0" />
@@ -344,26 +367,33 @@
       </div>
     </div>
 
-    <!-- Velocidad TTS -->
+    <!-- Voz -->
     <div class="control-card">
       <div class="card-header">
-        <div class="card-icon icon-purple">⚡</div>
+        <div class="card-icon icon-purple">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        </div>
         <div>
-          <div class="card-title">Velocidad de voz</div>
-          <div class="card-desc">Rate del TTS para todos los usuarios</div>
+          <div class="card-title">Voz TTS</div>
+          <div class="card-desc">Velocidad y tono para todos</div>
         </div>
       </div>
       <div class="ctrl-slider">
         <div class="ctrl-slider-header">
-          <span class="ctrl-label">Rate</span>
+          <span class="ctrl-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></svg>
+            Velocidad
+          </span>
           <span class="ctrl-val" id="val-ttsRate">1.1×</span>
         </div>
         <input type="range" id="ctrl-ttsRate" min="0.5" max="3.0" step="0.1" value="1.1" />
       </div>
-      <!-- Tono también en esta card -->
-      <div class="ctrl-slider" style="margin-top:.5rem;">
+      <div class="ctrl-slider">
         <div class="ctrl-slider-header">
-          <span class="ctrl-label">Tono (Pitch)</span>
+          <span class="ctrl-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            Tono (Pitch)
+          </span>
           <span class="ctrl-val" id="val-ttsPitch">1.0</span>
         </div>
         <input type="range" id="ctrl-ttsPitch" min="0.0" max="2.0" step="0.1" value="1.0" />
@@ -372,20 +402,25 @@
 
   </div>
 
-  <button class="btn-save" id="btn-save">💾 Aplicar cambios a todos los usuarios</button>
+  <button class="btn-save" id="btn-save">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    Aplicar cambios a todos los usuarios
+  </button>
 </div>
 
 <!-- Toast -->
-<div class="toast" id="toast">✅ Configuración aplicada a todos los usuarios</div>
+<div class="toast" id="toast">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  Configuración aplicada a todos los usuarios
+</div>
 
 <script>
   const socket = io();
 
-  // ── Login ──────────────────────────────────────────────────────────────────
+  // Login
   const loginScreen = document.getElementById('login-screen');
   const adminPanel  = document.getElementById('admin-panel');
   const pwInput     = document.getElementById('password-input');
-  const btnLogin    = document.getElementById('btn-login');
   const loginError  = document.getElementById('login-error');
 
   function doLogin() {
@@ -393,7 +428,7 @@
     if (!pw) return;
     socket.emit('admin-login', pw);
   }
-  btnLogin.addEventListener('click', doLogin);
+  document.getElementById('btn-login').addEventListener('click', doLogin);
   pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
   socket.on('admin-auth', ({ ok, config }) => {
@@ -402,9 +437,9 @@
       adminPanel.style.display = 'block';
       if (config) applyConfigToUI(config);
       fetchRooms();
-      setInterval(fetchRooms, 5000); // actualizar rooms cada 5s
+      setInterval(fetchRooms, 5000);
     } else {
-      loginError.style.display = 'block';
+      loginError.classList.add('show');
       loginError.style.animation = 'none';
       requestAnimationFrame(() => { loginError.style.animation = ''; });
       pwInput.value = '';
@@ -412,80 +447,63 @@
     }
   });
 
-  document.getElementById('btn-logout').addEventListener('click', () => {
-    location.reload();
-  });
+  document.getElementById('btn-logout').addEventListener('click', () => location.reload());
 
-  // ── Recibir config actualizada ─────────────────────────────────────────────
   socket.on('admin-config-saved', (cfg) => {
     applyConfigToUI(cfg);
-    showToast('✅ Configuración aplicada a todos los usuarios');
+    showToast();
   });
 
-  // ── Sincronizar sliders con inputs numéricos ───────────────────────────────
-  function linkSliderAndNumber(sliderId, numberId, valId, formatter) {
+  // Sincronizar slider <-> input numérico
+  function linkSlider(sliderId, numberId, valId, fmt) {
     const slider = document.getElementById(sliderId);
     const number = numberId ? document.getElementById(numberId) : null;
     const valEl  = document.getElementById(valId);
-
     slider.addEventListener('input', () => {
       const v = parseFloat(slider.value);
       if (number) number.value = v;
-      valEl.textContent = formatter(v);
+      valEl.textContent = fmt(v);
     });
-
     if (number) {
       number.addEventListener('input', () => {
         const v = Math.min(Math.max(parseFloat(number.value) || 0, parseFloat(slider.min)), parseFloat(slider.max));
         slider.value = v;
-        valEl.textContent = formatter(v);
+        valEl.textContent = fmt(v);
       });
     }
   }
 
-  const fmtQueue = v => v;
-  const fmtWords = v => v === 0 ? 'Sin límite' : v + ' palabras';
-  const fmtChars = v => v === 0 ? 'Sin límite' : v + ' chars';
-  const fmtRate  = v => parseFloat(v).toFixed(1) + '×';
-  const fmtPitch = v => parseFloat(v).toFixed(1);
+  linkSlider('ctrl-maxQueue', 'num-maxQueue', 'val-maxQueue', v => v);
+  linkSlider('ctrl-maxWords', 'num-maxWords', 'val-maxWords', v => v == 0 ? 'Sin límite' : v + ' palabras');
+  linkSlider('ctrl-maxChars', 'num-maxChars', 'val-maxChars', v => v == 0 ? 'Sin límite' : v + ' chars');
+  linkSlider('ctrl-ttsRate',  null,           'val-ttsRate',  v => parseFloat(v).toFixed(1) + '×');
+  linkSlider('ctrl-ttsPitch', null,           'val-ttsPitch', v => parseFloat(v).toFixed(1));
 
-  linkSliderAndNumber('ctrl-maxQueue', 'num-maxQueue', 'val-maxQueue', fmtQueue);
-  linkSliderAndNumber('ctrl-maxWords', 'num-maxWords', 'val-maxWords', fmtWords);
-  linkSliderAndNumber('ctrl-maxChars', 'num-maxChars', 'val-maxChars', fmtChars);
-  linkSliderAndNumber('ctrl-ttsRate',  null,           'val-ttsRate',  fmtRate);
-  linkSliderAndNumber('ctrl-ttsPitch', null,           'val-ttsPitch', fmtPitch);
-
-  // ── Aplicar config a la UI del admin ──────────────────────────────────────
   function applyConfigToUI(cfg) {
-    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-    const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-
-    set('ctrl-maxQueue',  cfg.maxQueue);  set('num-maxQueue', cfg.maxQueue);  setText('val-maxQueue', fmtQueue(cfg.maxQueue));
-    set('ctrl-maxWords',  cfg.maxWords);  set('num-maxWords', cfg.maxWords);  setText('val-maxWords', fmtWords(cfg.maxWords));
-    set('ctrl-maxChars',  cfg.maxChars);  set('num-maxChars', cfg.maxChars);  setText('val-maxChars', fmtChars(cfg.maxChars));
-    set('ctrl-ttsRate',   cfg.ttsRate);   setText('val-ttsRate',  fmtRate(cfg.ttsRate));
-    set('ctrl-ttsPitch',  cfg.ttsPitch);  setText('val-ttsPitch', fmtPitch(cfg.ttsPitch));
+    const s = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+    const t = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    s('ctrl-maxQueue', cfg.maxQueue); s('num-maxQueue', cfg.maxQueue); t('val-maxQueue', cfg.maxQueue);
+    s('ctrl-maxWords', cfg.maxWords); s('num-maxWords', cfg.maxWords); t('val-maxWords', cfg.maxWords == 0 ? 'Sin límite' : cfg.maxWords + ' palabras');
+    s('ctrl-maxChars', cfg.maxChars); s('num-maxChars', cfg.maxChars); t('val-maxChars', cfg.maxChars == 0 ? 'Sin límite' : cfg.maxChars + ' chars');
+    s('ctrl-ttsRate',  cfg.ttsRate);  t('val-ttsRate',  parseFloat(cfg.ttsRate).toFixed(1) + '×');
+    s('ctrl-ttsPitch', cfg.ttsPitch); t('val-ttsPitch', parseFloat(cfg.ttsPitch).toFixed(1));
   }
 
-  // ── Guardar ───────────────────────────────────────────────────────────────
   document.getElementById('btn-save').addEventListener('click', () => {
-    const config = {
+    socket.emit('admin-set-config', {
       maxQueue: parseFloat(document.getElementById('ctrl-maxQueue').value),
       maxWords: parseFloat(document.getElementById('ctrl-maxWords').value),
       maxChars: parseFloat(document.getElementById('ctrl-maxChars').value),
       ttsRate:  parseFloat(document.getElementById('ctrl-ttsRate').value),
       ttsPitch: parseFloat(document.getElementById('ctrl-ttsPitch').value),
-    };
-    socket.emit('admin-set-config', config);
+    });
   });
 
-  // ── Rooms activos (polling /health) ───────────────────────────────────────
   async function fetchRooms() {
     try {
-      const res  = await fetch('/health');
-      const data = await res.json();
+      const data = await (await fetch('/health')).json();
       const list = document.getElementById('rooms-list');
-      if (!data.rooms || data.rooms.length === 0) {
+      if (!data.rooms?.length) {
         list.innerHTML = '<span class="no-rooms">Sin usuarios conectados</span>';
         return;
       }
@@ -498,10 +516,8 @@
     } catch (_) {}
   }
 
-  // ── Toast ─────────────────────────────────────────────────────────────────
-  function showToast(msg) {
+  function showToast() {
     const t = document.getElementById('toast');
-    t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
   }
