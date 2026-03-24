@@ -103,7 +103,7 @@
   .reconnecting .dot { background: #f5a623; animation: pulse 1s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
 
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .65rem; }
   .stat-card {
     background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
     padding: .85rem; display: flex; flex-direction: column; gap: .2rem;
@@ -170,7 +170,7 @@
 
   #comments-container {
     flex: 1; overflow-y: auto; padding: 1rem 1.75rem;
-    display: flex; flex-direction: column; gap: .55rem; scroll-behavior: smooth;
+    display: flex; flex-direction: column-reverse; gap: .55rem; scroll-behavior: smooth;
   }
   #comments-container::-webkit-scrollbar { width: 4px; }
   #comments-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -368,7 +368,7 @@
         </div>
         <div class="stat-card">
           <div class="stat-card-header">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" x22="19" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" x2="19" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
           </div>
           <span class="stat-value" id="stat-follows" style="color:var(--accent2)">0</span>
           <span class="stat-label">Seguidores</span>
@@ -422,7 +422,7 @@
         </label>
         <label class="check-label">
           <input type="checkbox" id="follow-toggle" checked />
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" x22="19" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" x2="19" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
           Leer seguidores
         </label>
         <label class="check-label">
@@ -644,7 +644,7 @@
         <p class="comment-text">${esc(mensaje)}</p>
       </div>`;
     container.appendChild(card);
-    if (scrollToggle.checked) container.scrollTop = container.scrollHeight;
+    if (scrollToggle.checked) container.scrollTop = 0;
     if (audioToggle.checked)  speak(mensaje, card, false);
   });
 
@@ -676,7 +676,7 @@
       </div>`;
 
     container.appendChild(card);
-    if (scrollToggle.checked) container.scrollTop = container.scrollHeight;
+    if (scrollToggle.checked) container.scrollTop = 0;
 
     // TTS del agradecimiento
     if (giftToggle.checked) {
@@ -697,7 +697,7 @@
 
     card.innerHTML = `
       <div class="follow-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" x22="19" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" x2="19" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
       </div>
       <div class="follow-body">
         <div class="follow-meta">
@@ -712,7 +712,7 @@
       </div>`;
 
     container.appendChild(card);
-    if (scrollToggle.checked) container.scrollTop = container.scrollHeight;
+    if (scrollToggle.checked) container.scrollTop = 0;
 
     if (followToggle.checked) {
       speak(`¡Gracias ${usuario} por seguirme!`, card, true);
@@ -725,7 +725,7 @@
   });
 
   document.getElementById('btn-clear').addEventListener('click', () => {
-    container.innerHTML = '';
+    container.innerHTML = '<div class="empty-state" id="empty-state"><div class="empty-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><p>Conecta a un Live de TikTok<br/>y los comentarios aparecerán aquí en tiempo real.</p></div>';
     totalComments = 0; totalGifts = 0; totalFollows = 0;
     document.getElementById('stat-total').textContent = 0;
     document.getElementById('stat-gifts').textContent = 0;
