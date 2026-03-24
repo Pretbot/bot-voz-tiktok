@@ -1,5 +1,4 @@
 const { WebcastPushConnection } = require('tiktok-live-connector');
-const { generateTTS } = require('tiktok-tts-api');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -29,44 +28,22 @@ const io = new Server(server, {
 // rooms = { username: { connection, sockets: Set, queue, processing, reconnectTimer } }
 const rooms = new Map();
 
-const MAX_QUEUE   = 50;   // máximo de comentarios en cola por room
-const TTS_VOICE   = 'es_mx_002';
+const MAX_QUEUE          = 50;
 const RECONNECT_DELAY_MS = 5_000;
 const MAX_RECONNECTS     = 5;
 
-// ─── Cola de TTS por room ─────────────────────────────────────────────────────
-async function processQueue(username) {
-    const room = rooms.get(username);
-    if (!room || room.processing || room.queue.length === 0) return;
-
-    room.processing = true;
-    const { usuario, mensaje } = room.queue.shift();
-
-    try {
-        const audioBase64 = await generateTTS(TTS_VOICE, mensaje);
-        io.to(username).emit('nuevo-comentario-voz', { usuario, mensaje, audio: audioBase64 });
-        log.ok(`TTS generado para [${username}] — ${usuario}: ${mensaje.slice(0, 40)}`);
-    } catch (err) {
-        log.error(`TTS falló para [${username}]:`, err.message);
-        // Emitimos el comentario sin audio para que el frontend igual lo muestre
-        io.to(username).emit('nuevo-comentario-voz', { usuario, mensaje, audio: null });
-    } finally {
-        room.processing = false;
-        // Procesar siguiente elemento de la cola
-        setImmediate(() => processQueue(username));
-    }
-}
-
+// ─── Emit comentario directo (TTS lo hace el navegador) ───────────────────────
 function enqueue(username, usuario, mensaje) {
     const room = rooms.get(username);
     if (!room) return;
-
     if (room.queue.length >= MAX_QUEUE) {
         log.warn(`[${username}] Cola llena, descartando comentario de ${usuario}`);
         return;
     }
     room.queue.push({ usuario, mensaje });
-    processQueue(username);
+    // Emitir directo — el frontend habla con Web Speech API
+    io.to(username).emit('nuevo-comentario', { usuario, mensaje });
+    log.ok(`[${username}] ${usuario}: ${mensaje.slice(0, 50)}`);
 }
 
 // ─── Conexión a TikTok Live ───────────────────────────────────────────────────
