@@ -29,7 +29,7 @@ io.on('connection', (socket) => {
         tiktokConnection.on('chat', async (data) => {
             try {
                 // Generamos el audio con la voz de TikTok (es_mx_002 es voz femenina)
-                const audioBase64 = await generateTTS('es_mx_002', data.comment);
+                const audioBase64 = await tiktokTTS.getAudioBase64(data.comment, 'es_mx_002');
                 
                 io.emit('nuevo-comentario-voz', {
                     usuario: data.nickname,
