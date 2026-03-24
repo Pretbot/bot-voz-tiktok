@@ -28,50 +28,66 @@
     content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1000; opacity: .5;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
   }
+
+  /* Icons */
+  .icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .icon svg { display: block; }
+
   header {
     display: flex; align-items: center; gap: 1rem;
-    padding: 1.5rem 2rem; border-bottom: 1px solid var(--border);
-    background: rgba(10,10,15,.85); backdrop-filter: blur(10px);
+    padding: 1.25rem 2rem; border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,.9); backdrop-filter: blur(12px);
     position: sticky; top: 0; z-index: 100;
   }
   .logo {
-    font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em;
+    display: flex; align-items: center; gap: .6rem;
+    font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
-  .logo span { font-family: 'Space Mono', monospace; font-size: .85em; }
+  .logo-icon { color: var(--accent); -webkit-text-fill-color: initial; }
+  .header-sub { color: var(--muted); font-size: .78rem; font-family: 'Space Mono', monospace; margin-left: auto; }
 
-  main { flex: 1; display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 65px); }
+  main { flex: 1; display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 61px); }
 
   aside {
-    border-right: 1px solid var(--border); padding: 1.75rem 1.5rem;
-    display: flex; flex-direction: column; gap: 1.5rem;
+    border-right: 1px solid var(--border); padding: 1.5rem 1.25rem;
+    display: flex; flex-direction: column; gap: 1.4rem;
     background: var(--surface); overflow-y: auto;
   }
+  aside::-webkit-scrollbar { width: 3px; }
+  aside::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
   .section-label {
-    font-family: 'Space Mono', monospace; font-size: .65rem;
+    display: flex; align-items: center; gap: .4rem;
+    font-family: 'Space Mono', monospace; font-size: .62rem;
     letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: .5rem;
   }
-  .input-group { display: flex; flex-direction: column; gap: .75rem; }
+  .section-label svg { opacity: .6; }
+
+  .input-group { display: flex; flex-direction: column; gap: .65rem; }
+
   .field {
     display: flex; align-items: center; background: var(--bg);
     border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: border-color .2s;
   }
   .field:focus-within { border-color: var(--accent); box-shadow: var(--glow); }
-  .field .at {
+  .field-icon {
     padding: 0 .75rem; color: var(--accent);
-    font-family: 'Space Mono', monospace; font-size: .9rem;
-    user-select: none; border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    display: flex; align-items: center;
   }
   .field input {
     flex: 1; background: transparent; border: none; outline: none;
-    padding: .75rem; color: var(--text); font-family: 'Syne', sans-serif; font-size: .95rem;
+    padding: .7rem .75rem; color: var(--text); font-family: 'Syne', sans-serif; font-size: .9rem;
   }
   .field input::placeholder { color: var(--muted); }
+
   .btn {
-    width: 100%; padding: .8rem 1.25rem; border-radius: 8px; border: none;
-    font-family: 'Syne', sans-serif; font-size: .9rem; font-weight: 700;
+    width: 100%; padding: .75rem 1.25rem; border-radius: 8px; border: none;
+    font-family: 'Syne', sans-serif; font-size: .88rem; font-weight: 700;
     cursor: pointer; transition: all .2s; letter-spacing: .02em;
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
   }
   .btn-connect { background: var(--accent); color: #fff; box-shadow: var(--glow); }
   .btn-connect:hover { filter: brightness(1.15); transform: translateY(-1px); }
@@ -82,54 +98,47 @@
 
   .status-badge {
     display: flex; align-items: center; gap: .6rem;
-    padding: .7rem 1rem; border-radius: 8px;
+    padding: .65rem 1rem; border-radius: 8px;
     background: var(--bg); border: 1px solid var(--border);
-    font-size: .82rem; color: var(--muted); min-height: 44px; transition: all .3s;
+    font-size: .8rem; color: var(--muted); min-height: 42px; transition: all .3s;
   }
   .status-badge.connected   { color: var(--accent2); border-color: rgba(105,201,208,.3); }
   .status-badge.error       { color: var(--accent);  border-color: rgba(254,44,85,.3); }
   .status-badge.reconnecting{ color: #f5a623; border-color: rgba(245,166,35,.3); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background .3s; }
   .connected   .dot { background: var(--accent2); box-shadow: var(--glow2); animation: pulse 2s infinite; }
   .error       .dot { background: var(--accent); }
   .reconnecting .dot { background: #f5a623; animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
 
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
   .stat-card {
     background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: .9rem; display: flex; flex-direction: column; gap: .25rem;
+    padding: .85rem; display: flex; flex-direction: column; gap: .2rem;
   }
-  .stat-value { font-family: 'Space Mono', monospace; font-size: 1.4rem; font-weight: 700; }
-  .stat-label { font-size: .7rem; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+  .stat-card-header { display: flex; align-items: center; gap: .35rem; color: var(--muted); }
+  .stat-value { font-family: 'Space Mono', monospace; font-size: 1.35rem; font-weight: 700; margin-top: .2rem; }
+  .stat-label { font-size: .67rem; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
 
-  /* Config del admin — solo lectura */
+  /* Config readonly */
   .config-readonly {
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: 10px; padding: 1rem;
-    display: flex; flex-direction: column; gap: .7rem;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: .9rem;
+    display: flex; flex-direction: column; gap: .6rem;
   }
-  .config-row {
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .config-key {
-    font-family: 'Space Mono', monospace; font-size: .7rem; color: var(--muted);
-  }
-  .config-val {
-    font-family: 'Space Mono', monospace; font-size: .75rem;
-    color: var(--accent2); font-weight: 700;
-  }
+  .config-row { display: flex; justify-content: space-between; align-items: center; }
+  .config-key { display: flex; align-items: center; gap: .4rem; font-family: 'Space Mono', monospace; font-size: .68rem; color: var(--muted); }
+  .config-val { font-family: 'Space Mono', monospace; font-size: .72rem; color: var(--accent2); font-weight: 700; }
   .locked-badge {
-    display: inline-flex; align-items: center; gap: .3rem;
-    font-family: 'Space Mono', monospace; font-size: .6rem;
+    display: inline-flex; align-items: center; gap: .35rem;
+    font-family: 'Space Mono', monospace; font-size: .58rem;
     color: var(--muted); border: 1px solid var(--border);
-    border-radius: 4px; padding: 2px 7px; margin-bottom: .4rem;
+    border-radius: 4px; padding: 2px 7px; margin-bottom: .2rem;
   }
 
   /* Voice select */
   .styled-select {
     width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: .65rem .75rem; color: var(--text); font-family: 'Syne', sans-serif;
+    padding: .6rem .75rem; color: var(--text); font-family: 'Syne', sans-serif;
     font-size: .82rem; outline: none; cursor: pointer; appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2355556a' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right .75rem center; padding-right: 2rem;
@@ -138,73 +147,80 @@
   .styled-select:focus { border-color: var(--accent); box-shadow: var(--glow); }
   .styled-select option { background: #1a1a2e; }
 
-  .check-label {
-    display: flex; align-items: center; gap: .6rem;
-    cursor: pointer; font-size: .82rem; color: var(--muted);
-  }
-  .check-label input { accent-color: var(--accent); width: 14px; height: 14px; }
+  .check-label { display: flex; align-items: center; gap: .55rem; cursor: pointer; font-size: .8rem; color: var(--muted); }
+  .check-label input { accent-color: var(--accent); width: 13px; height: 13px; }
 
-  /* Volume slider (único control del usuario) */
   .slider-row { display: flex; flex-direction: column; gap: .3rem; }
-  .slider-row-header { display: flex; justify-content: space-between; }
-  .slider-row label { font-size: .75rem; color: var(--muted); font-family: 'Space Mono', monospace; }
-  .slider-val { font-family: 'Space Mono', monospace; font-size: .72rem; color: var(--accent2); }
+  .slider-row-header { display: flex; justify-content: space-between; align-items: center; }
+  .slider-row label { display: flex; align-items: center; gap: .35rem; font-size: .72rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .slider-val { font-family: 'Space Mono', monospace; font-size: .7rem; color: var(--accent2); }
   input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; height: 4px; }
   input[type=range]::-webkit-slider-runnable-track { background: var(--border); height: 4px; border-radius: 2px; }
   input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
-    background: var(--accent); margin-top: -5px; cursor: pointer; box-shadow: var(--glow);
+    -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
+    background: var(--accent); margin-top: -4.5px; cursor: pointer; box-shadow: var(--glow);
   }
+
+  .divider { height: 1px; background: var(--border); }
 
   /* Feed */
   .feed-area { display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
   .feed-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 1.25rem 1.75rem; border-bottom: 1px solid var(--border);
+    padding: 1.1rem 1.75rem; border-bottom: 1px solid var(--border);
   }
-  .feed-title { font-size: 1rem; font-weight: 700; }
+  .feed-title { display: flex; align-items: center; gap: .6rem; font-size: .95rem; font-weight: 700; }
   .btn-clear {
-    font-family: 'Space Mono', monospace; font-size: .7rem; background: none;
-    border: 1px solid var(--border); color: var(--muted); padding: .35rem .75rem;
+    display: flex; align-items: center; gap: .4rem;
+    font-family: 'Space Mono', monospace; font-size: .65rem; background: none;
+    border: 1px solid var(--border); color: var(--muted); padding: .32rem .7rem;
     border-radius: 6px; cursor: pointer; transition: all .2s; letter-spacing: .05em;
   }
   .btn-clear:hover { color: var(--accent); border-color: var(--accent); }
+
   #comments-container {
     flex: 1; overflow-y: auto; padding: 1rem 1.75rem;
-    display: flex; flex-direction: column; gap: .6rem; scroll-behavior: smooth;
+    display: flex; flex-direction: column; gap: .55rem; scroll-behavior: smooth;
   }
   #comments-container::-webkit-scrollbar { width: 4px; }
   #comments-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
   .empty-state {
     flex: 1; display: flex; flex-direction: column; align-items: center;
     justify-content: center; gap: 1rem; color: var(--muted); padding: 2rem; text-align: center;
   }
-  .empty-icon { font-size: 3rem; opacity: .3; }
-  .empty-state p { font-size: .9rem; line-height: 1.6; }
+  .empty-icon { opacity: .2; }
+  .empty-state p { font-size: .88rem; line-height: 1.6; }
+
   .comment-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    padding: .85rem 1rem; display: flex; gap: .85rem;
+    padding: .8rem .95rem; display: flex; gap: .8rem;
     animation: slideIn .25s cubic-bezier(.22,1,.36,1); transition: border-color .2s;
   }
-  .comment-card:hover { border-color: rgba(254,44,85,.25); }
+  .comment-card:hover { border-color: rgba(254,44,85,.2); }
   .comment-card.playing { border-color: var(--accent2); box-shadow: var(--glow2); }
-  @keyframes slideIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
   .avatar {
-    width: 34px; height: 34px; border-radius: 50%;
+    width: 33px; height: 33px; border-radius: 50%;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     display: flex; align-items: center; justify-content: center;
-    font-size: .8rem; font-weight: 800; flex-shrink: 0; color: #fff;
+    font-size: .75rem; font-weight: 800; flex-shrink: 0; color: #fff;
   }
   .comment-body { flex: 1; min-width: 0; }
-  .comment-meta { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .3rem; }
-  .comment-user { font-weight: 700; font-size: .82rem; color: var(--accent); }
-  .comment-time { font-family: 'Space Mono', monospace; font-size: .65rem; color: var(--muted); }
-  .comment-text { font-size: .88rem; line-height: 1.5; word-break: break-word; }
+  .comment-meta { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .25rem; }
+  .comment-user { font-weight: 700; font-size: .8rem; color: var(--accent); }
+  .comment-time { font-family: 'Space Mono', monospace; font-size: .62rem; color: var(--muted); }
+  .comment-text { font-size: .86rem; line-height: 1.5; word-break: break-word; }
+
   .truncated-badge {
-    font-family: 'Space Mono', monospace; font-size: .6rem; color: var(--muted);
+    display: inline-flex; align-items: center; gap: .25rem;
+    font-family: 'Space Mono', monospace; font-size: .58rem; color: var(--muted);
     border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; margin-left: .4rem;
+    vertical-align: middle;
   }
-  .audio-indicator { display: flex; align-items: center; gap: 3px; margin-top: .4rem; }
+
+  .audio-indicator { display: flex; align-items: center; gap: 3px; margin-top: .35rem; }
   .audio-indicator span {
     display: block; width: 3px; background: var(--accent2); border-radius: 3px; animation: eq .8s ease infinite;
   }
@@ -221,41 +237,78 @@
 </style>
 </head>
 <body>
+
 <header>
-  <div class="logo">TT<span>LIVE</span></div>
-  <span style="color:var(--muted);font-size:.8rem;font-family:'Space Mono',monospace;">comentarios en tiempo real</span>
+  <div class="logo">
+    <span class="logo-icon icon">
+      <!-- Radio / broadcast icon -->
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/>
+        <circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/>
+        <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
+      </svg>
+    </span>
+    TTLIVE
+  </div>
+  <span class="header-sub">comentarios en tiempo real</span>
 </header>
 
 <main>
   <aside>
 
+    <!-- Conectar -->
     <div>
-      <p class="section-label">Conectar</p>
+      <p class="section-label">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        Conectar
+      </p>
       <div class="input-group">
         <div class="field">
-          <span class="at">@</span>
+          <span class="field-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+          </span>
           <input id="username-input" type="text" placeholder="usuario_tiktok" autocomplete="off" />
         </div>
-        <button class="btn btn-connect" id="btn-connect">Conectar al Live</button>
-        <button class="btn btn-disconnect" id="btn-disconnect" disabled>Desconectar</button>
+        <button class="btn btn-connect" id="btn-connect">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+          Conectar al Live
+        </button>
+        <button class="btn btn-disconnect" id="btn-disconnect" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+          Desconectar
+        </button>
       </div>
     </div>
 
+    <!-- Estado -->
     <div>
-      <p class="section-label">Estado</p>
+      <p class="section-label">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+        Estado
+      </p>
       <div class="status-badge" id="status-badge">
         <span class="dot"></span><span id="status-text">Sin conexión</span>
       </div>
     </div>
 
+    <!-- Estadísticas -->
     <div>
-      <p class="section-label">Estadísticas</p>
+      <p class="section-label">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+        Estadísticas
+      </p>
       <div class="stats-grid">
         <div class="stat-card">
+          <div class="stat-card-header">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
           <span class="stat-value" id="stat-total">0</span>
           <span class="stat-label">Comentarios</span>
         </div>
         <div class="stat-card">
+          <div class="stat-card-header">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+          </div>
           <span class="stat-value" id="stat-queue">0</span>
           <span class="stat-label">En cola</span>
         </div>
@@ -264,51 +317,85 @@
 
     <!-- Config del admin (solo lectura) -->
     <div>
-      <p class="section-label">Configuración activa</p>
+      <p class="section-label">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Config activa
+      </p>
       <div class="config-readonly">
-        <span class="locked-badge">🔒 controlado por el admin</span>
+        <span class="locked-badge">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          controlado por admin
+        </span>
         <div class="config-row">
-          <span class="config-key">Cola servidor</span>
+          <span class="config-key">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Cola servidor
+          </span>
           <span class="config-val" id="cfg-maxQueue">50</span>
         </div>
         <div class="config-row">
-          <span class="config-key">Límite palabras</span>
+          <span class="config-key">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 12 8 10 12 18 16 10 19 12 21 6"/></svg>
+            Palabras TTS
+          </span>
           <span class="config-val" id="cfg-maxWords">Sin límite</span>
         </div>
         <div class="config-row">
-          <span class="config-key">Límite caracteres</span>
+          <span class="config-key">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+            Caracteres TTS
+          </span>
           <span class="config-val" id="cfg-maxChars">Sin límite</span>
         </div>
         <div class="config-row">
-          <span class="config-key">Velocidad TTS</span>
+          <span class="config-key">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            Velocidad
+          </span>
           <span class="config-val" id="cfg-ttsRate">1.1×</span>
         </div>
         <div class="config-row">
-          <span class="config-key">Tono TTS</span>
+          <span class="config-key">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+            Tono
+          </span>
           <span class="config-val" id="cfg-ttsPitch">1.0</span>
         </div>
       </div>
     </div>
 
-    <!-- Audio (lo que SÍ puede controlar el usuario) -->
+    <!-- Audio personal -->
     <div>
-      <p class="section-label">Audio personal</p>
+      <p class="section-label">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        Audio personal
+      </p>
       <div class="input-group">
         <label class="check-label">
-          <input type="checkbox" id="audio-toggle" checked />Reproducir TTS
+          <input type="checkbox" id="audio-toggle" checked />
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          Reproducir TTS
         </label>
         <label class="check-label">
-          <input type="checkbox" id="scroll-toggle" checked />Auto-scroll
+          <input type="checkbox" id="scroll-toggle" checked />
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
+          Auto-scroll
         </label>
         <div>
-          <p class="section-label" style="margin-bottom:.4rem;">Voz</p>
+          <p class="section-label" style="margin-bottom:.4rem;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            Voz
+          </p>
           <select id="voice-select" class="styled-select">
             <option>Cargando voces...</option>
           </select>
         </div>
         <div class="slider-row">
           <div class="slider-row-header">
-            <label>Volumen</label>
+            <label for="volume-slider">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              Volumen
+            </label>
             <span class="slider-val" id="volume-val">100%</span>
           </div>
           <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" />
@@ -320,12 +407,20 @@
 
   <section class="feed-area">
     <div class="feed-header">
-      <span class="feed-title">Feed de comentarios</span>
-      <button class="btn-clear" id="btn-clear">LIMPIAR</button>
+      <span class="feed-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Feed de comentarios
+      </span>
+      <button class="btn-clear" id="btn-clear">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        LIMPIAR
+      </button>
     </div>
     <div id="comments-container">
       <div class="empty-state" id="empty-state">
-        <div class="empty-icon">💬</div>
+        <div class="empty-icon">
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
         <p>Conecta a un Live de TikTok<br/>y los comentarios aparecerán aquí en tiempo real.</p>
       </div>
     </div>
@@ -335,21 +430,18 @@
 <script>
   const socket = io();
   let totalComments = 0;
+  let activeConfig = { maxQueue:50, maxWords:0, maxChars:0, ttsRate:1.1, ttsPitch:1.0 };
 
-  // Config activa que viene del servidor (la pone el admin)
-  let activeConfig = { maxQueue: 50, maxWords: 0, maxChars: 0, ttsRate: 1.1, ttsPitch: 1.0 };
-
-  // Recibir config del admin en tiempo real
   socket.on('config-update', (cfg) => {
     activeConfig = cfg;
-    document.getElementById('cfg-maxQueue').textContent  = cfg.maxQueue;
-    document.getElementById('cfg-maxWords').textContent  = cfg.maxWords  === 0 ? 'Sin límite' : cfg.maxWords  + ' palabras';
-    document.getElementById('cfg-maxChars').textContent  = cfg.maxChars  === 0 ? 'Sin límite' : cfg.maxChars  + ' chars';
-    document.getElementById('cfg-ttsRate').textContent   = parseFloat(cfg.ttsRate).toFixed(1)  + '×';
-    document.getElementById('cfg-ttsPitch').textContent  = parseFloat(cfg.ttsPitch).toFixed(1);
+    document.getElementById('cfg-maxQueue').textContent = cfg.maxQueue;
+    document.getElementById('cfg-maxWords').textContent = cfg.maxWords === 0 ? 'Sin límite' : cfg.maxWords + ' pal.';
+    document.getElementById('cfg-maxChars').textContent = cfg.maxChars === 0 ? 'Sin límite' : cfg.maxChars + ' ch.';
+    document.getElementById('cfg-ttsRate').textContent  = parseFloat(cfg.ttsRate).toFixed(1) + '×';
+    document.getElementById('cfg-ttsPitch').textContent = parseFloat(cfg.ttsPitch).toFixed(1);
   });
 
-  // ── TTS ───────────────────────────────────────────────────────────────────
+  // TTS
   const synth = window.speechSynthesis;
   let voices = [], ttsQueue = [], isSpeaking = false;
 
@@ -361,12 +453,12 @@
     const es = voices.filter(v => v.lang.startsWith('es'));
     const other = voices.filter(v => !v.lang.startsWith('es'));
     if (es.length) {
-      const g = document.createElement('optgroup'); g.label = '🌎 Español';
+      const g = document.createElement('optgroup'); g.label = 'Español';
       es.forEach(v => { const o = document.createElement('option'); o.value = v.name; o.textContent = `${v.name} (${v.lang})`; g.appendChild(o); });
       sel.appendChild(g);
     }
     if (other.length) {
-      const g = document.createElement('optgroup'); g.label = '🌐 Otros';
+      const g = document.createElement('optgroup'); g.label = 'Otros idiomas';
       other.forEach(v => { const o = document.createElement('option'); o.value = v.name; o.textContent = `${v.name} (${v.lang})`; g.appendChild(o); });
       sel.appendChild(g);
     }
@@ -377,8 +469,8 @@
   function applyLimits(original) {
     let texto = original, truncated = false;
     if (activeConfig.maxWords > 0) {
-      const words = texto.split(/\s+/);
-      if (words.length > activeConfig.maxWords) { texto = words.slice(0, activeConfig.maxWords).join(' '); truncated = true; }
+      const w = texto.split(/\s+/);
+      if (w.length > activeConfig.maxWords) { texto = w.slice(0, activeConfig.maxWords).join(' '); truncated = true; }
     }
     if (activeConfig.maxChars > 0 && texto.length > activeConfig.maxChars) {
       texto = texto.slice(0, activeConfig.maxChars).trimEnd(); truncated = true;
@@ -398,10 +490,9 @@
     isSpeaking = true;
     const { texto, truncated, card } = ttsQueue.shift();
     document.getElementById('stat-queue').textContent = ttsQueue.length;
-
     const utt = new SpeechSynthesisUtterance(texto);
-    const selVoice = voices.find(v => v.name === document.getElementById('voice-select').value);
-    if (selVoice) { utt.voice = selVoice; utt.lang = selVoice.lang; } else { utt.lang = 'es-MX'; }
+    const sv = voices.find(v => v.name === document.getElementById('voice-select').value);
+    if (sv) { utt.voice = sv; utt.lang = sv.lang; } else { utt.lang = 'es-MX'; }
     utt.volume = parseFloat(document.getElementById('volume-slider').value);
     utt.rate   = activeConfig.ttsRate;
     utt.pitch  = activeConfig.ttsPitch;
@@ -411,16 +502,18 @@
     ind.innerHTML = '<span></span><span></span><span></span><span></span>';
     card.querySelector('.comment-body').appendChild(ind);
     card.classList.add('playing');
+
     if (truncated) {
-      const b = document.createElement('span'); b.className = 'truncated-badge'; b.textContent = '✂ recortado';
+      const b = document.createElement('span');
+      b.className = 'truncated-badge';
+      b.innerHTML = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="4" x2="20" y2="20"/><polyline points="9.9 4.9 4 4 4.9 9.9"/><polyline points="14.1 19.1 20 20 19.1 14.1"/></svg> recortado`;
       card.querySelector('.comment-text').appendChild(b);
     }
-
     utt.onend = utt.onerror = () => { card.classList.remove('playing'); ind.remove(); isSpeaking = false; playNext(); };
     synth.speak(utt);
   }
 
-  // ── Conectar ──────────────────────────────────────────────────────────────
+  // Conectar
   const usernameInput = document.getElementById('username-input');
   const btnConnect    = document.getElementById('btn-connect');
   const btnDisconnect = document.getElementById('btn-disconnect');
@@ -431,7 +524,7 @@
 
   btnConnect.addEventListener('click', () => {
     const u = usernameInput.value.trim().replace(/^@/, '');
-    if (!u) { setStatus('error', '❌ Ingresa un username'); return; }
+    if (!u) { setStatus('error', 'Ingresa un username'); return; }
     socket.emit('join-live', u);
     setStatus('reconnecting', `Conectando a @${u}...`);
     btnConnect.disabled = true; btnDisconnect.disabled = false;
@@ -458,7 +551,6 @@
     totalComments++;
     document.getElementById('stat-total').textContent = totalComments;
     if (emptyState) emptyState.style.display = 'none';
-
     const card = document.createElement('div');
     card.className = 'comment-card';
     const time = new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
@@ -479,7 +571,6 @@
   document.getElementById('volume-slider').addEventListener('input', function() {
     document.getElementById('volume-val').textContent = Math.round(this.value * 100) + '%';
   });
-
   document.getElementById('btn-clear').addEventListener('click', () => {
     container.innerHTML = ''; totalComments = 0;
     document.getElementById('stat-total').textContent = 0;
