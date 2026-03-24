@@ -13,10 +13,12 @@
     --border:  #1e1e2e;
     --accent:  #fe2c55;
     --accent2: #69c9d0;
+    --gold:    #f5c842;
     --text:    #e8e8f0;
     --muted:   #55556a;
     --glow:    0 0 18px rgba(254,44,85,.45);
     --glow2:   0 0 14px rgba(105,201,208,.35);
+    --glow-g:  0 0 14px rgba(245,200,66,.4);
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -28,10 +30,6 @@
     content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1000; opacity: .5;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
   }
-
-  /* Icons */
-  .icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .icon svg { display: block; }
 
   header {
     display: flex; align-items: center; gap: 1rem;
@@ -45,7 +43,6 @@
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
-  .logo-icon { color: var(--accent); -webkit-text-fill-color: initial; }
   .header-sub { color: var(--muted); font-size: .78rem; font-family: 'Space Mono', monospace; margin-left: auto; }
 
   main { flex: 1; display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 61px); }
@@ -63,7 +60,6 @@
     font-family: 'Space Mono', monospace; font-size: .62rem;
     letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: .5rem;
   }
-  .section-label svg { opacity: .6; }
 
   .input-group { display: flex; flex-direction: column; gap: .65rem; }
 
@@ -72,11 +68,7 @@
     border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: border-color .2s;
   }
   .field:focus-within { border-color: var(--accent); box-shadow: var(--glow); }
-  .field-icon {
-    padding: 0 .75rem; color: var(--accent);
-    border-right: 1px solid var(--border);
-    display: flex; align-items: center;
-  }
+  .field-icon { padding: 0 .75rem; color: var(--accent); border-right: 1px solid var(--border); display: flex; align-items: center; }
   .field input {
     flex: 1; background: transparent; border: none; outline: none;
     padding: .7rem .75rem; color: var(--text); font-family: 'Syne', sans-serif; font-size: .9rem;
@@ -135,7 +127,6 @@
     border-radius: 4px; padding: 2px 7px; margin-bottom: .2rem;
   }
 
-  /* Voice select */
   .styled-select {
     width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
     padding: .6rem .75rem; color: var(--text); font-family: 'Syne', sans-serif;
@@ -160,7 +151,6 @@
     -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
     background: var(--accent); margin-top: -4.5px; cursor: pointer; box-shadow: var(--glow);
   }
-
   .divider { height: 1px; background: var(--border); }
 
   /* Feed */
@@ -192,6 +182,7 @@
   .empty-icon { opacity: .2; }
   .empty-state p { font-size: .88rem; line-height: 1.6; }
 
+  /* Card de comentario normal */
   .comment-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
     padding: .8rem .95rem; display: flex; gap: .8rem;
@@ -199,6 +190,41 @@
   }
   .comment-card:hover { border-color: rgba(254,44,85,.2); }
   .comment-card.playing { border-color: var(--accent2); box-shadow: var(--glow2); }
+
+  /* Card de regalo */
+  .gift-card {
+    background: linear-gradient(135deg, rgba(245,200,66,.08), rgba(254,44,85,.06));
+    border: 1px solid rgba(245,200,66,.3);
+    border-radius: 10px; padding: .8rem .95rem;
+    display: flex; gap: .8rem; align-items: center;
+    animation: slideIn .25s cubic-bezier(.22,1,.36,1), giftPulse .6s ease;
+    transition: border-color .2s;
+  }
+  .gift-card.playing { border-color: var(--gold); box-shadow: var(--glow-g); }
+  @keyframes giftPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(245,200,66,.5); }
+    70%  { box-shadow: 0 0 0 10px rgba(245,200,66,0); }
+    100% { box-shadow: 0 0 0 0 rgba(245,200,66,0); }
+  }
+
+  .gift-icon {
+    width: 33px; height: 33px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), #e8a020);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: #000;
+  }
+  .gift-body { flex: 1; min-width: 0; }
+  .gift-meta { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .2rem; }
+  .gift-user { font-weight: 700; font-size: .8rem; color: var(--gold); }
+  .gift-time { font-family: 'Space Mono', monospace; font-size: .62rem; color: var(--muted); }
+  .gift-text { font-size: .86rem; line-height: 1.5; color: var(--text); }
+  .gift-badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-family: 'Space Mono', monospace; font-size: .6rem;
+    color: var(--gold); border: 1px solid rgba(245,200,66,.3);
+    border-radius: 4px; padding: 1px 6px; margin-left: .4rem; vertical-align: middle;
+  }
+
   @keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
   .avatar {
@@ -224,6 +250,7 @@
   .audio-indicator span {
     display: block; width: 3px; background: var(--accent2); border-radius: 3px; animation: eq .8s ease infinite;
   }
+  .gift-card .audio-indicator span { background: var(--gold); }
   .audio-indicator span:nth-child(1){height:8px;animation-delay:0s}
   .audio-indicator span:nth-child(2){height:14px;animation-delay:.15s}
   .audio-indicator span:nth-child(3){height:6px;animation-delay:.3s}
@@ -240,14 +267,11 @@
 
 <header>
   <div class="logo">
-    <span class="logo-icon icon">
-      <!-- Radio / broadcast icon -->
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/>
-        <circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/>
-        <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
-      </svg>
-    </span>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="-webkit-text-fill-color:initial">
+      <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/>
+      <circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/>
+      <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
+    </svg>
     TTLIVE
   </div>
   <span class="header-sub">comentarios en tiempo real</span>
@@ -256,7 +280,6 @@
 <main>
   <aside>
 
-    <!-- Conectar -->
     <div>
       <p class="section-label">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -280,7 +303,6 @@
       </div>
     </div>
 
-    <!-- Estado -->
     <div>
       <p class="section-label">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
@@ -291,7 +313,6 @@
       </div>
     </div>
 
-    <!-- Estadísticas -->
     <div>
       <p class="section-label">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
@@ -307,10 +328,10 @@
         </div>
         <div class="stat-card">
           <div class="stat-card-header">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
           </div>
-          <span class="stat-value" id="stat-queue">0</span>
-          <span class="stat-label">En cola</span>
+          <span class="stat-value" id="stat-gifts" style="color:var(--gold)">0</span>
+          <span class="stat-label">Regalos</span>
         </div>
       </div>
     </div>
@@ -324,41 +345,26 @@
       <div class="config-readonly">
         <span class="locked-badge">
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          uso controlado
+          controlado por admin
         </span>
         <div class="config-row">
-          <span class="config-key">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Cola servidor
-          </span>
+          <span class="config-key"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Cola servidor</span>
           <span class="config-val" id="cfg-maxQueue">50</span>
         </div>
         <div class="config-row">
-          <span class="config-key">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 12 8 10 12 18 16 10 19 12 21 6"/></svg>
-            Palabras TTS
-          </span>
+          <span class="config-key"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg> Palabras TTS</span>
           <span class="config-val" id="cfg-maxWords">Sin límite</span>
         </div>
         <div class="config-row">
-          <span class="config-key">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
-            Caracteres TTS
-          </span>
+          <span class="config-key"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="4" x2="20" y2="20"/><polyline points="9.9 4.9 4 4 4.9 9.9"/><polyline points="14.1 19.1 20 20 19.1 14.1"/></svg> Chars TTS</span>
           <span class="config-val" id="cfg-maxChars">Sin límite</span>
         </div>
         <div class="config-row">
-          <span class="config-key">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-            Velocidad
-          </span>
+          <span class="config-key"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></svg> Velocidad</span>
           <span class="config-val" id="cfg-ttsRate">1.1×</span>
         </div>
         <div class="config-row">
-          <span class="config-key">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-            Tono
-          </span>
+          <span class="config-key"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Tono</span>
           <span class="config-val" id="cfg-ttsPitch">1.0</span>
         </div>
       </div>
@@ -377,6 +383,11 @@
           Reproducir TTS
         </label>
         <label class="check-label">
+          <input type="checkbox" id="gift-toggle" checked />
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+          Leer regalos
+        </label>
+        <label class="check-label">
           <input type="checkbox" id="scroll-toggle" checked />
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
           Auto-scroll
@@ -393,7 +404,7 @@
         <div class="slider-row">
           <div class="slider-row-header">
             <label for="volume-slider">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
               Volumen
             </label>
             <span class="slider-val" id="volume-val">100%</span>
@@ -409,7 +420,7 @@
     <div class="feed-header">
       <span class="feed-title">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Panel de comentarios
+        Feed en vivo
       </span>
       <button class="btn-clear" id="btn-clear">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -430,8 +441,10 @@
 <script>
   const socket = io();
   let totalComments = 0;
-  let activeConfig = { maxQueue:50, maxWords:0, maxChars:0, ttsRate:1.1, ttsPitch:1.0 };
+  let totalGifts    = 0;
+  let activeConfig  = { maxQueue:50, maxWords:0, maxChars:0, ttsRate:1.1, ttsPitch:1.0 };
 
+  // Config del admin
   socket.on('config-update', (cfg) => {
     activeConfig = cfg;
     document.getElementById('cfg-maxQueue').textContent = cfg.maxQueue;
@@ -441,7 +454,7 @@
     document.getElementById('cfg-ttsPitch').textContent = parseFloat(cfg.ttsPitch).toFixed(1);
   });
 
-  // TTS
+  // ── TTS ───────────────────────────────────────────────────────────────────
   const synth = window.speechSynthesis;
   let voices = [], ttsQueue = [], isSpeaking = false;
 
@@ -450,7 +463,7 @@
     if (!voices.length) return;
     const sel = document.getElementById('voice-select');
     sel.innerHTML = '';
-    const es = voices.filter(v => v.lang.startsWith('es'));
+    const es    = voices.filter(v => v.lang.startsWith('es'));
     const other = voices.filter(v => !v.lang.startsWith('es'));
     if (es.length) {
       const g = document.createElement('optgroup'); g.label = 'Español';
@@ -478,18 +491,17 @@
     return { texto, truncated };
   }
 
-  function speak(original, card) {
-    const { texto, truncated } = applyLimits(original);
-    ttsQueue.push({ texto, truncated, card });
-    document.getElementById('stat-queue').textContent = ttsQueue.length;
+  function speak(original, card, isGift = false) {
+    const { texto, truncated } = isGift ? { texto: original, truncated: false } : applyLimits(original);
+    ttsQueue.push({ texto, truncated, card, isGift });
     playNext();
   }
 
   function playNext() {
     if (isSpeaking || !ttsQueue.length) return;
     isSpeaking = true;
-    const { texto, truncated, card } = ttsQueue.shift();
-    document.getElementById('stat-queue').textContent = ttsQueue.length;
+    const { texto, truncated, card, isGift } = ttsQueue.shift();
+
     const utt = new SpeechSynthesisUtterance(texto);
     const sv = voices.find(v => v.name === document.getElementById('voice-select').value);
     if (sv) { utt.voice = sv; utt.lang = sv.lang; } else { utt.lang = 'es-MX'; }
@@ -497,29 +509,33 @@
     utt.rate   = activeConfig.ttsRate;
     utt.pitch  = activeConfig.ttsPitch;
 
+    const bodyEl = card.querySelector('.comment-body') || card.querySelector('.gift-body');
     const ind = document.createElement('div');
     ind.className = 'audio-indicator';
     ind.innerHTML = '<span></span><span></span><span></span><span></span>';
-    card.querySelector('.comment-body').appendChild(ind);
+    if (bodyEl) bodyEl.appendChild(ind);
     card.classList.add('playing');
 
-    if (truncated) {
+    if (truncated && !isGift) {
       const b = document.createElement('span');
       b.className = 'truncated-badge';
       b.innerHTML = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="4" x2="20" y2="20"/><polyline points="9.9 4.9 4 4 4.9 9.9"/><polyline points="14.1 19.1 20 20 19.1 14.1"/></svg> recortado`;
-      card.querySelector('.comment-text').appendChild(b);
+      const textEl = card.querySelector('.comment-text');
+      if (textEl) textEl.appendChild(b);
     }
+
     utt.onend = utt.onerror = () => { card.classList.remove('playing'); ind.remove(); isSpeaking = false; playNext(); };
     synth.speak(utt);
   }
 
-  // Conectar
+  // ── Conectar ──────────────────────────────────────────────────────────────
   const usernameInput = document.getElementById('username-input');
   const btnConnect    = document.getElementById('btn-connect');
   const btnDisconnect = document.getElementById('btn-disconnect');
   const container     = document.getElementById('comments-container');
   const emptyState    = document.getElementById('empty-state');
   const audioToggle   = document.getElementById('audio-toggle');
+  const giftToggle    = document.getElementById('gift-toggle');
   const scrollToggle  = document.getElementById('scroll-toggle');
 
   btnConnect.addEventListener('click', () => {
@@ -547,10 +563,12 @@
     document.getElementById('status-text').textContent = msg;
   }
 
+  // ── Nuevo comentario ──────────────────────────────────────────────────────
   socket.on('nuevo-comentario', ({ usuario, mensaje }) => {
     totalComments++;
     document.getElementById('stat-total').textContent = totalComments;
     if (emptyState) emptyState.style.display = 'none';
+
     const card = document.createElement('div');
     card.className = 'comment-card';
     const time = new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
@@ -565,23 +583,63 @@
       </div>`;
     container.appendChild(card);
     if (scrollToggle.checked) container.scrollTop = container.scrollHeight;
-    if (audioToggle.checked)  speak(mensaje, card);
+    if (audioToggle.checked)  speak(mensaje, card, false);
   });
 
+  // ── Nuevo regalo ──────────────────────────────────────────────────────────
+  socket.on('nuevo-regalo', ({ usuario }) => {
+    totalGifts++;
+    document.getElementById('stat-gifts').textContent = totalGifts;
+    if (emptyState) emptyState.style.display = 'none';
+
+    const card = document.createElement('div');
+    card.className = 'gift-card';
+    const time = new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    const nombreSeguro = esc(usuario);
+
+    card.innerHTML = `
+      <div class="gift-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+      </div>
+      <div class="gift-body">
+        <div class="gift-meta">
+          <span class="gift-user">@${nombreSeguro}</span>
+          <span class="gift-time">${time}</span>
+          <span class="gift-badge">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7"/></svg>
+            regalo
+          </span>
+        </div>
+        <p class="gift-text">Gracias <strong>${nombreSeguro}</strong> por tu regalo</p>
+      </div>`;
+
+    container.appendChild(card);
+    if (scrollToggle.checked) container.scrollTop = container.scrollHeight;
+
+    // TTS del agradecimiento
+    if (giftToggle.checked) {
+      speak(`Gracias ${usuario} por tu regalo`, card, true);
+    }
+  });
+
+  // ── Controles ─────────────────────────────────────────────────────────────
   document.getElementById('volume-slider').addEventListener('input', function() {
     document.getElementById('volume-val').textContent = Math.round(this.value * 100) + '%';
   });
+
   document.getElementById('btn-clear').addEventListener('click', () => {
-    container.innerHTML = ''; totalComments = 0;
+    container.innerHTML = '';
+    totalComments = 0; totalGifts = 0;
     document.getElementById('stat-total').textContent = 0;
-    ttsQueue = []; document.getElementById('stat-queue').textContent = 0;
+    document.getElementById('stat-gifts').textContent = 0;
+    ttsQueue = [];
     synth.cancel(); isSpeaking = false;
   });
 
   function esc(s) {
-  if (!s) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 </script>
 </body>
 </html>
