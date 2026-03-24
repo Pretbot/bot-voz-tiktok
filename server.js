@@ -1,5 +1,5 @@
 const { WebcastPushConnection } = require('tiktok-live-connector');
-const { generateTTS } = require('tiktok-tts-api');
+const tiktokTTS = require('tiktok-tts');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
