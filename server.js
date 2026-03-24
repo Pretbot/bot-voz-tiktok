@@ -64,6 +64,14 @@ function enqueueGift(username, usuario) {
     log.ok(`[${username}] REGALO de ${usuario}`);
 }
 
+// ─── Enqueue seguidor ─────────────────────────────────────────────────────────
+function enqueueFollow(username, usuario) {
+    const room = rooms.get(username);
+    if (!room) return;
+    io.to(username).emit('nuevo-follow', { usuario });
+    log.ok(`[${username}] FOLLOW de ${usuario}`);
+}
+
 // ─── Conexion TikTok Live ─────────────────────────────────────────────────────
 function connectToLive(username, reconnectCount = 0) {
     const room = rooms.get(username);
@@ -92,6 +100,14 @@ function connectToLive(username, reconnectCount = 0) {
         // giftType 1 = regalo de streak (se repite), esperamos a que termine
         if (data.giftType === 1 && !data.repeatEnd) return;
         enqueueGift(username, nombre);
+    });
+
+    // Nuevos seguidores
+    conn.on('social', (data) => {
+        if (data.displayType === 'pm_mt_msg_viewer_follow') {
+            const nombre = data.nickname || data.uniqueId || 'alguien';
+            enqueueFollow(username, nombre);
+        }
     });
 
     conn.on('disconnected', () => {
