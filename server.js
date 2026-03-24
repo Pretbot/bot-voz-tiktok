@@ -102,12 +102,10 @@ function connectToLive(username, reconnectCount = 0) {
         enqueueGift(username, nombre);
     });
 
-    // Nuevos seguidores
-    conn.on('social', (data) => {
-        if (data.displayType === 'pm_mt_msg_viewer_follow') {
-            const nombre = data.nickname || data.uniqueId || 'alguien';
-            enqueueFollow(username, nombre);
-        }
+    // Nuevos seguidores — evento dedicado de la librería
+    conn.on('follow', (data) => {
+        const nombre = data.nickname || data.uniqueId || 'alguien';
+        enqueueFollow(username, nombre);
     });
 
     conn.on('disconnected', () => {
