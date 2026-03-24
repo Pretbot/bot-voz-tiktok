@@ -1,5 +1,5 @@
 const { WebcastPushConnection } = require('tiktok-live-connector');
-const tiktokTTS = require('tiktok-tts');
+const tiktokTTS = require('tiktok-tts'); 
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -16,7 +16,6 @@ io.on('connection', (socket) => {
     let tiktokConnection;
 
     socket.on('join-live', (username) => {
-        console.log(`Intentando conectar a: ${username}`);
         tiktokConnection = new WebcastPushConnection(username);
 
         tiktokConnection.connect().then(state => {
@@ -25,11 +24,10 @@ io.on('connection', (socket) => {
             socket.emit('status', `Error: ${err.message}`);
         });
 
-        // Evento cuando llega un comentario
         tiktokConnection.on('chat', async (data) => {
             try {
-                // Generamos el audio con la voz de TikTok (es_mx_002 es voz femenina)
-                const audioBase64 = await tiktokTTS.getAudioBase64(data.comment, 'es_mx_002');
+                // Generamos el audio (Voz femenina de TikTok)
+                const audioBase64 = await tiktokTTS.getAudioBase64(data.comment, { voice: 'es_mx_002' });
                 
                 io.emit('nuevo-comentario-voz', {
                     usuario: data.nickname,
@@ -47,8 +45,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// Render usa la variable de entorno PORT
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Servidor escuchando en el puerto ${PORT}`);
+    console.log(`Servidor en puerto ${PORT}`);
 });
