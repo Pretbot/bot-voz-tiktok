@@ -1,77 +1,231 @@
 const { WebcastPushConnection } = require('tiktok-live-connector');
-const tiktokTTS = require('tiktok-tts'); 
+const { generateTTS } = require('tiktok-tts-api');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const path = require('path');
 
+// ─── Logger ──────────────────────────────────────────────────────────────────
+const log = {
+    info:  (msg, ...args) => console.log(`[${new Date().toISOString()}] ℹ️  ${msg}`, ...args),
+    warn:  (msg, ...args) => console.warn(`[${new Date().toISOString()}] ⚠️  ${msg}`, ...args),
+    error: (msg, ...args) => console.error(`[${new Date().toISOString()}] ❌ ${msg}`, ...args),
+    ok:    (msg, ...args) => console.log(`[${new Date().toISOString()}] ✅ ${msg}`, ...args),
+};
+
+// ─── App Setup ────────────────────────────────────────────────────────────────
 const app = express();
 app.use(cors());
-const server = http.createServer(app);
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuración de Socket.io
+const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*" }
+    cors: { origin: '*' },
 });
 
+// ─── Room / Session Registry ──────────────────────────────────────────────────
+// rooms = { username: { connection, sockets: Set, queue, processing, reconnectTimer } }
+const rooms = new Map();
+
+const MAX_QUEUE   = 50;   // máximo de comentarios en cola por room
+const TTS_VOICE   = 'es_mx_002';
+const RECONNECT_DELAY_MS = 5_000;
+const MAX_RECONNECTS     = 5;
+
+// ─── Cola de TTS por room ─────────────────────────────────────────────────────
+async function processQueue(username) {
+    const room = rooms.get(username);
+    if (!room || room.processing || room.queue.length === 0) return;
+
+    room.processing = true;
+    const { usuario, mensaje } = room.queue.shift();
+
+    try {
+        const audioBase64 = await generateTTS(TTS_VOICE, mensaje);
+        io.to(username).emit('nuevo-comentario-voz', { usuario, mensaje, audio: audioBase64 });
+        log.ok(`TTS generado para [${username}] — ${usuario}: ${mensaje.slice(0, 40)}`);
+    } catch (err) {
+        log.error(`TTS falló para [${username}]:`, err.message);
+        // Emitimos el comentario sin audio para que el frontend igual lo muestre
+        io.to(username).emit('nuevo-comentario-voz', { usuario, mensaje, audio: null });
+    } finally {
+        room.processing = false;
+        // Procesar siguiente elemento de la cola
+        setImmediate(() => processQueue(username));
+    }
+}
+
+function enqueue(username, usuario, mensaje) {
+    const room = rooms.get(username);
+    if (!room) return;
+
+    if (room.queue.length >= MAX_QUEUE) {
+        log.warn(`[${username}] Cola llena, descartando comentario de ${usuario}`);
+        return;
+    }
+    room.queue.push({ usuario, mensaje });
+    processQueue(username);
+}
+
+// ─── Conexión a TikTok Live ───────────────────────────────────────────────────
+function connectToLive(username, reconnectCount = 0) {
+    const room = rooms.get(username);
+    if (!room) return;
+
+    const tiktokConnection = new WebcastPushConnection(username);
+    room.connection = tiktokConnection;
+
+    tiktokConnection.connect()
+        .then(state => {
+            log.ok(`Conectado al live de @${username} (roomId: ${state.roomId})`);
+            room.reconnectCount = 0;
+            io.to(username).emit('status', {
+                type: 'connected',
+                message: `✅ Conectado al Live de @${username}`,
+            });
+        })
+        .catch(err => {
+            log.error(`No se pudo conectar a @${username}:`, err.message);
+            io.to(username).emit('status', {
+                type: 'error',
+                message: `❌ Error al conectar: ${err.message}`,
+            });
+            scheduleReconnect(username, reconnectCount);
+        });
+
+    // Comentarios de chat
+    tiktokConnection.on('chat', (data) => {
+        enqueue(username, data.nickname, data.comment);
+    });
+
+    // Desconexión inesperada
+    tiktokConnection.on('disconnected', () => {
+        log.warn(`[${username}] Desconectado inesperadamente`);
+        io.to(username).emit('status', {
+            type: 'reconnecting',
+            message: `🔄 Reconectando a @${username}...`,
+        });
+        scheduleReconnect(username, reconnectCount);
+    });
+
+    // Errores de stream
+    tiktokConnection.on('error', (err) => {
+        log.error(`[${username}] Error de conexión:`, err.message);
+    });
+}
+
+function scheduleReconnect(username, previousCount) {
+    const room = rooms.get(username);
+    if (!room || room.sockets.size === 0) return; // sin clientes, no reconectar
+
+    if (previousCount >= MAX_RECONNECTS) {
+        log.error(`[${username}] Máximo de reconexiones alcanzado`);
+        io.to(username).emit('status', {
+            type: 'failed',
+            message: `❌ No se pudo reconectar a @${username} tras ${MAX_RECONNECTS} intentos`,
+        });
+        return;
+    }
+
+    const delay = RECONNECT_DELAY_MS * (previousCount + 1);
+    log.info(`[${username}] Reintentando en ${delay / 1000}s (intento ${previousCount + 1}/${MAX_RECONNECTS})`);
+
+    room.reconnectTimer = setTimeout(() => {
+        if (rooms.has(username) && rooms.get(username).sockets.size > 0) {
+            connectToLive(username, previousCount + 1);
+        }
+    }, delay);
+}
+
+// ─── Socket.IO ────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
-    let tiktokConnection;
+    log.info(`Socket conectado: ${socket.id}`);
+    let currentRoom = null;
 
     socket.on('join-live', (username) => {
-        // 1. Limpiamos el nombre (le quitamos el @ si lo trae)
-        const cleanUsername = username.replace('@', '').trim();
-        
-        tiktokConnection = new WebcastPushConnection(cleanUsername);
+        if (!username || typeof username !== 'string') {
+            socket.emit('status', { type: 'error', message: '❌ Username inválido' });
+            return;
+        }
 
-        // 2. Intentamos conectar al Live
-        tiktokConnection.connect().then(state => {
-            console.log(`Conectado al Live de: ${cleanUsername}`);
-            socket.emit('status', `Conectado al Live de ${cleanUsername}`);
-        }).catch(err => {
-            console.error("Error al conectar:", err);
-            socket.emit('status', `Error: ${err.message}`);
-        });
+        username = username.trim().replace(/^@/, '').toLowerCase();
 
-        // 3. Escuchamos los comentarios del chat
-        tiktokConnection.on('chat', async (data) => {
-            console.log(`Nuevo comentario: ${data.uniqueId}: ${data.comment}`);
-            
-            try {
-                // Generamos el audio base64 con la voz de TikTok (es_mx_002)
-                const audioBase64 = await tiktokTTS.getAudioBase64(data.comment, { voice: 'es_mx_002' });
-                
-                // Enviamos todo a tu página de InfinityFree
-                io.emit('nuevo-comentario-voz', {
-                    usuario: data.uniqueId,
-                    mensaje: data.comment,
-                    audio: audioBase64
-                });
-            } catch (err) {
-                console.error("Error generando voz:", err);
-                // Si la voz falla, enviamos el texto solo para que no se pierda
-                io.emit('nuevo-comentario-voz', {
-                    usuario: data.uniqueId,
-                    mensaje: data.comment,
-                    audio: null
-                });
-            }
-        });
-    });
+        // Salir de room anterior si existe
+        if (currentRoom) {
+            leaveRoom(socket, currentRoom);
+        }
 
-    // Desconectar cuando se cierra la página
-    socket.on('disconnect', () => {
-        if (tiktokConnection) {
-            tiktokConnection.disconnect();
-            console.log("Desconectado de TikTok Live");
+        currentRoom = username;
+        socket.join(username);
+
+        if (!rooms.has(username)) {
+            // Primera conexión a este room
+            rooms.set(username, {
+                connection: null,
+                sockets: new Set([socket.id]),
+                queue: [],
+                processing: false,
+                reconnectTimer: null,
+                reconnectCount: 0,
+            });
+            log.info(`Room creado: ${username}`);
+            connectToLive(username);
+        } else {
+            // Room ya existe, unirse sin reconectar
+            rooms.get(username).sockets.add(socket.id);
+            log.info(`Socket ${socket.id} unido al room existente: ${username}`);
+            socket.emit('status', {
+                type: 'connected',
+                message: `✅ Unido al Live de @${username}`,
+            });
         }
     });
+
+    socket.on('leave-live', () => {
+        if (currentRoom) {
+            leaveRoom(socket, currentRoom);
+            currentRoom = null;
+        }
+    });
+
+    socket.on('disconnect', () => {
+        log.info(`Socket desconectado: ${socket.id}`);
+        if (currentRoom) leaveRoom(socket, currentRoom);
+    });
 });
 
-// Usamos el puerto que nos da Render o el 3000 por defecto
+function leaveRoom(socket, username) {
+    socket.leave(username);
+    const room = rooms.get(username);
+    if (!room) return;
+
+    room.sockets.delete(socket.id);
+    log.info(`Socket ${socket.id} salió del room: ${username} (quedan ${room.sockets.size})`);
+
+    if (room.sockets.size === 0) {
+        // Último cliente: limpiar todo
+        if (room.reconnectTimer) clearTimeout(room.reconnectTimer);
+        if (room.connection) {
+            try { room.connection.disconnect(); } catch (_) {}
+        }
+        rooms.delete(username);
+        log.info(`Room eliminado: ${username}`);
+    }
+}
+
+// ─── Health check ─────────────────────────────────────────────────────────────
+app.get('/health', (_req, res) => {
+    const activeRooms = [...rooms.keys()].map(u => ({
+        username: u,
+        sockets: rooms.get(u).sockets.size,
+        queueLength: rooms.get(u).queue.length,
+    }));
+    res.json({ status: 'ok', activeRooms });
+});
+
+// ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Servidor corriendo en puerto ${PORT}`);
-});
-server.listen(PORT, () => {
-    console.log(`Servidor en puerto ${PORT}`);
+    log.ok(`Servidor escuchando en el puerto ${PORT}`);
 });
