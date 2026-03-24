@@ -7,23 +7,23 @@ const path = require('path');
 
 // ─── Logger ───────────────────────────────────────────────────────────────────
 const log = {
-    info:  (msg, ...args) => console.log(`[${new Date().toISOString()}] ℹ️  ${msg}`, ...args),
-    warn:  (msg, ...args) => console.warn(`[${new Date().toISOString()}] ⚠️  ${msg}`, ...args),
-    error: (msg, ...args) => console.error(`[${new Date().toISOString()}] ❌ ${msg}`, ...args),
-    ok:    (msg, ...args) => console.log(`[${new Date().toISOString()}] ✅ ${msg}`, ...args),
+    info:  (msg, ...args) => console.log(`[${new Date().toISOString()}] [INFO]  ${msg}`, ...args),
+    warn:  (msg, ...args) => console.warn(`[${new Date().toISOString()}] [WARN]  ${msg}`, ...args),
+    error: (msg, ...args) => console.error(`[${new Date().toISOString()}] [ERROR] ${msg}`, ...args),
+    ok:    (msg, ...args) => console.log(`[${new Date().toISOString()}] [OK]    ${msg}`, ...args),
 };
 
-// ─── Contraseña de admin ──────────────────────────────────────────────────────
-// Cambia aquí o usa:  ADMIN_PASSWORD=miClave node server.js
+// ─── Contrasena de admin ──────────────────────────────────────────────────────
+// Cambia aqui o usa:  ADMIN_PASSWORD=miClave node server.js
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234';
 
-// ─── Configuración global (solo el admin la cambia, todos la reciben) ─────────
+// ─── Configuracion global (solo el admin la cambia, todos la reciben) ─────────
 let globalConfig = {
-    maxQueue:  50,    // cola del servidor: comentarios en buffer antes de descartar
-    maxWords:  0,     // límite palabras TTS  (0 = sin límite)
-    maxChars:  0,     // límite caracteres TTS (0 = sin límite)
-    ttsRate:   1.1,   // velocidad de voz
-    ttsPitch:  1.0,   // tono de voz
+    maxQueue:  50,
+    maxWords:  0,
+    maxChars:  0,
+    ttsRate:   1.1,
+    ttsPitch:  1.0,
 };
 
 // ─── App Setup ────────────────────────────────────────────────────────────────
@@ -64,28 +64,28 @@ function connectToLive(username, reconnectCount = 0) {
     conn.connect()
         .then(state => {
             log.ok(`Conectado a @${username} (roomId: ${state.roomId})`);
-            io.to(username).emit('status', { type: 'connected', message: `✅ Conectado al Live de @${username}` });
+            io.to(username).emit('status', { type: 'connected', message: `Conectado al Live de @${username}` });
         })
         .catch(err => {
-            log.error(`No se pudo conectar a @${username}:`, err.message);
-            io.to(username).emit('status', { type: 'error', message: `❌ Error: ${err.message}` });
+            log.error(`No se pudo conectar a @${username}: ${err.message}`);
+            io.to(username).emit('status', { type: 'error', message: `Error al conectar: ${err.message}` });
             scheduleReconnect(username, reconnectCount);
         });
 
     conn.on('chat', (data) => enqueue(username, data.nickname, data.comment));
     conn.on('disconnected', () => {
         log.warn(`[${username}] Desconectado`);
-        io.to(username).emit('status', { type: 'reconnecting', message: `🔄 Reconectando a @${username}...` });
+        io.to(username).emit('status', { type: 'reconnecting', message: `Reconectando a @${username}...` });
         scheduleReconnect(username, reconnectCount);
     });
-    conn.on('error', (err) => log.error(`[${username}]:`, err.message));
+    conn.on('error', (err) => log.error(`[${username}]: ${err.message}`));
 }
 
 function scheduleReconnect(username, previousCount) {
     const room = rooms.get(username);
     if (!room || room.sockets.size === 0) return;
     if (previousCount >= MAX_RECONNECTS) {
-        io.to(username).emit('status', { type: 'failed', message: `❌ Sin reconexión tras ${MAX_RECONNECTS} intentos` });
+        io.to(username).emit('status', { type: 'failed', message: `Sin reconexion tras ${MAX_RECONNECTS} intentos` });
         return;
     }
     const delay = RECONNECT_DELAY_MS * (previousCount + 1);
@@ -101,13 +101,11 @@ io.on('connection', (socket) => {
     let currentRoom = null;
     let isAdmin = false;
 
-    // Al conectar, cualquier cliente recibe la config actual
     socket.emit('config-update', globalConfig);
 
-    // ── Usuarios ──────────────────────────────────────────────────────────────
     socket.on('join-live', (username) => {
         if (!username || typeof username !== 'string') {
-            socket.emit('status', { type: 'error', message: '❌ Username inválido' });
+            socket.emit('status', { type: 'error', message: 'Username invalido' });
             return;
         }
         username = username.trim().replace(/^@/, '').toLowerCase();
@@ -120,7 +118,7 @@ io.on('connection', (socket) => {
             connectToLive(username);
         } else {
             rooms.get(username).sockets.add(socket.id);
-            socket.emit('status', { type: 'connected', message: `✅ Unido al Live de @${username}` });
+            socket.emit('status', { type: 'connected', message: `Unido al Live de @${username}` });
         }
     });
 
@@ -128,7 +126,6 @@ io.on('connection', (socket) => {
         if (currentRoom) { leaveRoom(socket, currentRoom); currentRoom = null; }
     });
 
-    // ── Admin: login ──────────────────────────────────────────────────────────
     socket.on('admin-login', (password) => {
         if (password === ADMIN_PASSWORD) {
             isAdmin = true;
@@ -137,17 +134,15 @@ io.on('connection', (socket) => {
             log.ok(`Admin autenticado: ${socket.id}`);
         } else {
             socket.emit('admin-auth', { ok: false });
-            log.warn(`Contraseña incorrecta desde ${socket.id}`);
+            log.warn(`Contrasena incorrecta desde ${socket.id}`);
         }
     });
 
-    // ── Admin: guardar nueva config ───────────────────────────────────────────
     socket.on('admin-set-config', (newConfig) => {
         if (!isAdmin) {
-            socket.emit('status', { type: 'error', message: '❌ No autorizado' });
+            socket.emit('status', { type: 'error', message: 'No autorizado' });
             return;
         }
-
         const rules = {
             maxQueue: [1,   500],
             maxWords: [0,   100],
@@ -155,7 +150,6 @@ io.on('connection', (socket) => {
             ttsRate:  [0.5, 3.0],
             ttsPitch: [0.0, 2.0],
         };
-
         for (const [key, [min, max]] of Object.entries(rules)) {
             if (newConfig[key] !== undefined) {
                 const val = parseFloat(newConfig[key]);
@@ -163,10 +157,7 @@ io.on('connection', (socket) => {
                     globalConfig[key] = val;
             }
         }
-
-        log.ok('Config global actualizada:', globalConfig);
-
-        // Propagar a TODOS los clientes conectados
+        log.ok('Config global actualizada:', JSON.stringify(globalConfig));
         io.emit('config-update', globalConfig);
         socket.emit('admin-config-saved', globalConfig);
     });
@@ -189,7 +180,6 @@ function leaveRoom(socket, username) {
     }
 }
 
-// ─── Health ───────────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
     res.json({
         status: 'ok',
@@ -202,10 +192,9 @@ app.get('/health', (_req, res) => {
     });
 });
 
-// ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     log.ok(`Servidor en puerto ${PORT}`);
-    log.info(`Admin panel → http://localhost:${PORT}/admin.html`);
-    log.warn(`Contraseña admin: ${ADMIN_PASSWORD}`);
+    log.info(`Admin panel -> http://localhost:${PORT}/admin.html`);
+    log.warn(`Contrasena admin: ${ADMIN_PASSWORD}`);
 });
