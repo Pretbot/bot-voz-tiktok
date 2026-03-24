@@ -5,7 +5,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
 
-// ─── Logger ──────────────────────────────────────────────────────────────────
+// ─── Logger ───────────────────────────────────────────────────────────────────
 const log = {
     info:  (msg, ...args) => console.log(`[${new Date().toISOString()}] ℹ️  ${msg}`, ...args),
     warn:  (msg, ...args) => console.warn(`[${new Date().toISOString()}] ⚠️  ${msg}`, ...args),
@@ -13,9 +13,23 @@ const log = {
     ok:    (msg, ...args) => console.log(`[${new Date().toISOString()}] ✅ ${msg}`, ...args),
 };
 
+// ─── Contraseña de admin ──────────────────────────────────────────────────────
+// Cambia aquí o usa:  ADMIN_PASSWORD=miClave node server.js
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234';
+
+// ─── Configuración global (solo el admin la cambia, todos la reciben) ─────────
+let globalConfig = {
+    maxQueue:  50,    // cola del servidor: comentarios en buffer antes de descartar
+    maxWords:  0,     // límite palabras TTS  (0 = sin límite)
+    maxChars:  0,     // límite caracteres TTS (0 = sin límite)
+    ttsRate:   1.1,   // velocidad de voz
+    ttsPitch:  1.0,   // tono de voz
+};
+
 // ─── App Setup ────────────────────────────────────────────────────────────────
 const app = express();
 app.use(cors());
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const server = http.createServer(app);
@@ -24,95 +38,60 @@ const io = new Server(server, {
     transports: ['websocket', 'polling'],
 });
 
-// ─── Room / Session Registry ──────────────────────────────────────────────────
-// rooms = { username: { connection, sockets: Set, queue, processing, reconnectTimer } }
+// ─── Rooms ────────────────────────────────────────────────────────────────────
 const rooms = new Map();
-
-const MAX_QUEUE          = 50;
 const RECONNECT_DELAY_MS = 5_000;
 const MAX_RECONNECTS     = 5;
 
-// ─── Emit comentario directo (TTS lo hace el navegador) ───────────────────────
 function enqueue(username, usuario, mensaje) {
     const room = rooms.get(username);
     if (!room) return;
-    if (room.queue.length >= MAX_QUEUE) {
-        log.warn(`[${username}] Cola llena, descartando comentario de ${usuario}`);
+    if (room.queue.length >= globalConfig.maxQueue) {
+        log.warn(`[${username}] Cola llena (${globalConfig.maxQueue}), descartando: ${usuario}`);
         return;
     }
     room.queue.push({ usuario, mensaje });
-    // Emitir directo — el frontend habla con Web Speech API
     io.to(username).emit('nuevo-comentario', { usuario, mensaje });
     log.ok(`[${username}] ${usuario}: ${mensaje.slice(0, 50)}`);
 }
 
-// ─── Conexión a TikTok Live ───────────────────────────────────────────────────
 function connectToLive(username, reconnectCount = 0) {
     const room = rooms.get(username);
     if (!room) return;
+    const conn = new WebcastPushConnection(username);
+    room.connection = conn;
 
-    const tiktokConnection = new WebcastPushConnection(username);
-    room.connection = tiktokConnection;
-
-    tiktokConnection.connect()
+    conn.connect()
         .then(state => {
-            log.ok(`Conectado al live de @${username} (roomId: ${state.roomId})`);
-            room.reconnectCount = 0;
-            io.to(username).emit('status', {
-                type: 'connected',
-                message: `✅ Conectado al Live de @${username}`,
-            });
+            log.ok(`Conectado a @${username} (roomId: ${state.roomId})`);
+            io.to(username).emit('status', { type: 'connected', message: `✅ Conectado al Live de @${username}` });
         })
         .catch(err => {
             log.error(`No se pudo conectar a @${username}:`, err.message);
-            io.to(username).emit('status', {
-                type: 'error',
-                message: `❌ Error al conectar: ${err.message}`,
-            });
+            io.to(username).emit('status', { type: 'error', message: `❌ Error: ${err.message}` });
             scheduleReconnect(username, reconnectCount);
         });
 
-    // Comentarios de chat
-    tiktokConnection.on('chat', (data) => {
-        enqueue(username, data.nickname, data.comment);
-    });
-
-    // Desconexión inesperada
-    tiktokConnection.on('disconnected', () => {
-        log.warn(`[${username}] Desconectado inesperadamente`);
-        io.to(username).emit('status', {
-            type: 'reconnecting',
-            message: `🔄 Reconectando a @${username}...`,
-        });
+    conn.on('chat', (data) => enqueue(username, data.nickname, data.comment));
+    conn.on('disconnected', () => {
+        log.warn(`[${username}] Desconectado`);
+        io.to(username).emit('status', { type: 'reconnecting', message: `🔄 Reconectando a @${username}...` });
         scheduleReconnect(username, reconnectCount);
     });
-
-    // Errores de stream
-    tiktokConnection.on('error', (err) => {
-        log.error(`[${username}] Error de conexión:`, err.message);
-    });
+    conn.on('error', (err) => log.error(`[${username}]:`, err.message));
 }
 
 function scheduleReconnect(username, previousCount) {
     const room = rooms.get(username);
-    if (!room || room.sockets.size === 0) return; // sin clientes, no reconectar
-
+    if (!room || room.sockets.size === 0) return;
     if (previousCount >= MAX_RECONNECTS) {
-        log.error(`[${username}] Máximo de reconexiones alcanzado`);
-        io.to(username).emit('status', {
-            type: 'failed',
-            message: `❌ No se pudo reconectar a @${username} tras ${MAX_RECONNECTS} intentos`,
-        });
+        io.to(username).emit('status', { type: 'failed', message: `❌ Sin reconexión tras ${MAX_RECONNECTS} intentos` });
         return;
     }
-
     const delay = RECONNECT_DELAY_MS * (previousCount + 1);
-    log.info(`[${username}] Reintentando en ${delay / 1000}s (intento ${previousCount + 1}/${MAX_RECONNECTS})`);
-
     room.reconnectTimer = setTimeout(() => {
-        if (rooms.has(username) && rooms.get(username).sockets.size > 0) {
+        if (rooms.has(username) && rooms.get(username).sockets.size > 0)
             connectToLive(username, previousCount + 1);
-        }
     }, delay);
 }
 
@@ -120,55 +99,79 @@ function scheduleReconnect(username, previousCount) {
 io.on('connection', (socket) => {
     log.info(`Socket conectado: ${socket.id}`);
     let currentRoom = null;
+    let isAdmin = false;
 
+    // Al conectar, cualquier cliente recibe la config actual
+    socket.emit('config-update', globalConfig);
+
+    // ── Usuarios ──────────────────────────────────────────────────────────────
     socket.on('join-live', (username) => {
         if (!username || typeof username !== 'string') {
             socket.emit('status', { type: 'error', message: '❌ Username inválido' });
             return;
         }
-
         username = username.trim().replace(/^@/, '').toLowerCase();
-
-        // Salir de room anterior si existe
-        if (currentRoom) {
-            leaveRoom(socket, currentRoom);
-        }
-
+        if (currentRoom) leaveRoom(socket, currentRoom);
         currentRoom = username;
         socket.join(username);
 
         if (!rooms.has(username)) {
-            // Primera conexión a este room
-            rooms.set(username, {
-                connection: null,
-                sockets: new Set([socket.id]),
-                queue: [],
-                processing: false,
-                reconnectTimer: null,
-                reconnectCount: 0,
-            });
-            log.info(`Room creado: ${username}`);
+            rooms.set(username, { connection: null, sockets: new Set([socket.id]), queue: [], reconnectTimer: null, reconnectCount: 0 });
             connectToLive(username);
         } else {
-            // Room ya existe, unirse sin reconectar
             rooms.get(username).sockets.add(socket.id);
-            log.info(`Socket ${socket.id} unido al room existente: ${username}`);
-            socket.emit('status', {
-                type: 'connected',
-                message: `✅ Unido al Live de @${username}`,
-            });
+            socket.emit('status', { type: 'connected', message: `✅ Unido al Live de @${username}` });
         }
     });
 
     socket.on('leave-live', () => {
-        if (currentRoom) {
-            leaveRoom(socket, currentRoom);
-            currentRoom = null;
+        if (currentRoom) { leaveRoom(socket, currentRoom); currentRoom = null; }
+    });
+
+    // ── Admin: login ──────────────────────────────────────────────────────────
+    socket.on('admin-login', (password) => {
+        if (password === ADMIN_PASSWORD) {
+            isAdmin = true;
+            socket.join('admins');
+            socket.emit('admin-auth', { ok: true, config: globalConfig });
+            log.ok(`Admin autenticado: ${socket.id}`);
+        } else {
+            socket.emit('admin-auth', { ok: false });
+            log.warn(`Contraseña incorrecta desde ${socket.id}`);
         }
     });
 
+    // ── Admin: guardar nueva config ───────────────────────────────────────────
+    socket.on('admin-set-config', (newConfig) => {
+        if (!isAdmin) {
+            socket.emit('status', { type: 'error', message: '❌ No autorizado' });
+            return;
+        }
+
+        const rules = {
+            maxQueue: [1,   500],
+            maxWords: [0,   100],
+            maxChars: [0,   500],
+            ttsRate:  [0.5, 3.0],
+            ttsPitch: [0.0, 2.0],
+        };
+
+        for (const [key, [min, max]] of Object.entries(rules)) {
+            if (newConfig[key] !== undefined) {
+                const val = parseFloat(newConfig[key]);
+                if (!isNaN(val) && val >= min && val <= max)
+                    globalConfig[key] = val;
+            }
+        }
+
+        log.ok('Config global actualizada:', globalConfig);
+
+        // Propagar a TODOS los clientes conectados
+        io.emit('config-update', globalConfig);
+        socket.emit('admin-config-saved', globalConfig);
+    });
+
     socket.on('disconnect', () => {
-        log.info(`Socket desconectado: ${socket.id}`);
         if (currentRoom) leaveRoom(socket, currentRoom);
     });
 });
@@ -177,33 +180,32 @@ function leaveRoom(socket, username) {
     socket.leave(username);
     const room = rooms.get(username);
     if (!room) return;
-
     room.sockets.delete(socket.id);
-    log.info(`Socket ${socket.id} salió del room: ${username} (quedan ${room.sockets.size})`);
-
     if (room.sockets.size === 0) {
-        // Último cliente: limpiar todo
         if (room.reconnectTimer) clearTimeout(room.reconnectTimer);
-        if (room.connection) {
-            try { room.connection.disconnect(); } catch (_) {}
-        }
+        if (room.connection) try { room.connection.disconnect(); } catch (_) {}
         rooms.delete(username);
         log.info(`Room eliminado: ${username}`);
     }
 }
 
-// ─── Health check ─────────────────────────────────────────────────────────────
+// ─── Health ───────────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
-    const activeRooms = [...rooms.keys()].map(u => ({
-        username: u,
-        sockets: rooms.get(u).sockets.size,
-        queueLength: rooms.get(u).queue.length,
-    }));
-    res.json({ status: 'ok', activeRooms });
+    res.json({
+        status: 'ok',
+        config: globalConfig,
+        rooms: [...rooms.keys()].map(u => ({
+            username: u,
+            sockets: rooms.get(u).sockets.size,
+            queueLength: rooms.get(u).queue.length,
+        })),
+    });
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    log.ok(`Servidor escuchando en el puerto ${PORT}`);
+    log.ok(`Servidor en puerto ${PORT}`);
+    log.info(`Admin panel → http://localhost:${PORT}/admin.html`);
+    log.warn(`Contraseña admin: ${ADMIN_PASSWORD}`);
 });
