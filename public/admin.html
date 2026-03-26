@@ -198,6 +198,49 @@
   }
   .ctrl-number:focus { border-color: var(--gold); box-shadow: var(--glow-g); }
 
+  /* Panel de sonidos */
+  .sound-panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.35rem 1.25rem; margin-bottom: 1.2rem;
+  }
+  .sound-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .6rem;
+    margin-top: .9rem;
+  }
+  .btn-sound {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem;
+    padding: .75rem .5rem; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: .72rem; font-weight: 700;
+    transition: all .18s; text-align: center; line-height: 1.3;
+  }
+  .btn-sound:hover { border-color: var(--accent2); color: var(--accent2); transform: translateY(-2px); box-shadow: var(--glow2); }
+  .btn-sound:active { transform: translateY(0); }
+  .btn-sound .s-emoji { font-size: 1.4rem; line-height: 1; }
+
+  /* TTS admin */
+  .tts-panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.35rem 1.25rem; margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: .9rem;
+  }
+  .tts-field {
+    display: flex; gap: .6rem;
+  }
+  .tts-input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: .7rem .9rem; color: var(--text); font-family: 'Syne', sans-serif;
+    font-size: .88rem; outline: none; transition: border-color .2s;
+  }
+  .tts-input:focus { border-color: var(--gold); box-shadow: var(--glow-g); }
+  .tts-input::placeholder { color: var(--muted); }
+  .btn-tts {
+    padding: .7rem 1.2rem; border-radius: 8px; border: none;
+    background: var(--gold); color: #000; font-family: 'Syne', sans-serif;
+    font-size: .85rem; font-weight: 800; cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; gap: .4rem; white-space: nowrap;
+  }
+  .btn-tts:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
   /* Botón guardar */
   .btn-save {
     width: 100%; padding: 1rem; border-radius: 12px; border: none;
@@ -402,6 +445,56 @@
 
   </div>
 
+  <!-- Mensaje TTS del admin -->
+  <div class="tts-panel">
+    <div class="card-header">
+      <div class="card-icon icon-gold">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      </div>
+      <div>
+        <div class="card-title">Mensaje al live</div>
+        <div class="card-desc">El TTS lo lee con prioridad a todos los viewers</div>
+      </div>
+    </div>
+    <div class="tts-field">
+      <input type="text" class="tts-input" id="admin-tts-input" placeholder="Escribe un mensaje para leer en voz alta..." maxlength="300" />
+      <button class="btn-tts" id="btn-admin-tts">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Enviar
+      </button>
+    </div>
+  </div>
+
+  <!-- Panel de sonidos -->
+  <div class="sound-panel">
+    <div class="card-header">
+      <div class="card-icon icon-teal">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      </div>
+      <div>
+        <div class="card-title">Reacciones de sonido</div>
+        <div class="card-desc">Se reproduce para todos los viewers conectados</div>
+      </div>
+    </div>
+    <div class="sound-grid">
+      <button class="btn-sound" data-sound="aplausos"><span class="s-emoji">👏</span>Aplausos</button>
+      <button class="btn-sound" data-sound="redoble"><span class="s-emoji">🥁</span>Redoble</button>
+      <button class="btn-sound" data-sound="fanfarria"><span class="s-emoji">🎺</span>Fanfarria</button>
+      <button class="btn-sound" data-sound="campana"><span class="s-emoji">🔔</span>Campana</button>
+      <button class="btn-sound" data-sound="risas"><span class="s-emoji">😂</span>Risas</button>
+      <button class="btn-sound" data-sound="fail"><span class="s-emoji">😬</span>Fail / Wah</button>
+      <button class="btn-sound" data-sound="rimshot"><span class="s-emoji">🥁</span>Rimshot</button>
+      <button class="btn-sound" data-sound="suspenso"><span class="s-emoji">😱</span>Suspenso</button>
+      <button class="btn-sound" data-sound="abucheo"><span class="s-emoji">👎</span>Abucheo</button>
+      <button class="btn-sound" data-sound="alerta"><span class="s-emoji">⚡</span>Alerta</button>
+      <button class="btn-sound" data-sound="levelup"><span class="s-emoji">⬆️</span>Level Up</button>
+      <button class="btn-sound" data-sound="moneda"><span class="s-emoji">🪙</span>Moneda</button>
+      <button class="btn-sound" data-sound="gameover"><span class="s-emoji">💀</span>Game Over</button>
+      <button class="btn-sound" data-sound="explosion"><span class="s-emoji">💥</span>Explosión</button>
+      <button class="btn-sound" data-sound="sirena"><span class="s-emoji">🚨</span>Sirena</button>
+    </div>
+  </div>
+
   <button class="btn-save" id="btn-save">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
     Aplicar cambios a todos los usuarios
@@ -451,7 +544,7 @@
 
   socket.on('admin-config-saved', (cfg) => {
     applyConfigToUI(cfg);
-    showToast();
+    showToast('Configuración aplicada a todos los usuarios');
   });
 
   // Sincronizar slider <-> input numérico
@@ -499,6 +592,32 @@
     });
   });
 
+  // ── Botones de sonido ─────────────────────────────────────────────────────
+  document.querySelectorAll('.btn-sound').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.sound;
+      socket.emit('admin-play-sound', id);
+      // feedback visual rápido
+      btn.style.borderColor = 'var(--accent2)';
+      btn.style.color = 'var(--accent2)';
+      setTimeout(() => { btn.style.borderColor = ''; btn.style.color = ''; }, 500);
+    });
+  });
+
+  // ── TTS del admin ─────────────────────────────────────────────────────────
+  function sendAdminTTS() {
+    const input = document.getElementById('admin-tts-input');
+    const texto = input.value.trim();
+    if (!texto) return;
+    socket.emit('admin-tts', texto);
+    input.value = '';
+    showToast('Mensaje enviado al live');
+  }
+  document.getElementById('btn-admin-tts').addEventListener('click', sendAdminTTS);
+  document.getElementById('admin-tts-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendAdminTTS();
+  });
+
   async function fetchRooms() {
     try {
       const data = await (await fetch('/health')).json();
@@ -516,8 +635,10 @@
     } catch (_) {}
   }
 
-  function showToast() {
+  function showToast(msg) {
     const t = document.getElementById('toast');
+    const span = t.querySelector('span') || t;
+    if (msg) t.childNodes[t.childNodes.length - 1].textContent = ' ' + msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
   }
