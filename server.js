@@ -72,6 +72,23 @@ function enqueueFollow(username, usuario) {
     log.ok(`[${username}] FOLLOW de ${usuario}`);
 }
 
+// ─── Like ─────────────────────────────────────────────────────────────────────
+const likeThrottle = new Map(); // evita spam: un aviso cada 30s por usuario
+function handleLike(username, usuario, likeCount) {
+    const key = `${username}:${usuario}`;
+    const now = Date.now();
+    if (likeThrottle.has(key) && now - likeThrottle.get(key) < 30_000) return;
+    likeThrottle.set(key, now);
+    io.to(username).emit('nuevo-like', { usuario, likeCount });
+    log.ok(`[${username}] LIKE x${likeCount} de ${usuario}`);
+}
+
+// ─── Share ────────────────────────────────────────────────────────────────────
+function handleShare(username, usuario) {
+    io.to(username).emit('nuevo-share', { usuario });
+    log.ok(`[${username}] SHARE de ${usuario}`);
+}
+
 // ─── Conexion TikTok Live ─────────────────────────────────────────────────────
 function connectToLive(username, reconnectCount = 0) {
     const room = rooms.get(username);
@@ -106,6 +123,20 @@ function connectToLive(username, reconnectCount = 0) {
     conn.on('follow', (data) => {
         const nombre = data.nickname || data.uniqueId || 'alguien';
         enqueueFollow(username, nombre);
+    });
+
+    // Likes
+    conn.on('like', (data) => {
+        const nombre = data.nickname || data.uniqueId || 'alguien';
+        handleLike(username, nombre, data.likeCount || 1);
+    });
+
+    // Shares (evento 'social' con displayType share)
+    conn.on('social', (data) => {
+        if (data.displayType === 'pm_mt_msg_viewer_share') {
+            const nombre = data.nickname || data.uniqueId || 'alguien';
+            handleShare(username, nombre);
+        }
     });
 
     conn.on('disconnected', () => {
@@ -194,6 +225,26 @@ io.on('connection', (socket) => {
         socket.emit('admin-config-saved', globalConfig);
     });
 
+    // Admin: disparar sonido a todos
+    socket.on('admin-play-sound', (soundId) => {
+        if (!isAdmin) return;
+        const valid = ['aplausos','redoble','fanfarria','campana','risas','fail',
+                       'rimshot','suspenso','abucheo','alerta','levelup','moneda',
+                       'gameover','explosion','sirena'];
+        if (!valid.includes(soundId)) return;
+        io.emit('play-sound', soundId);
+        log.ok(`Admin disparó sonido: ${soundId}`);
+    });
+
+    // Admin: enviar mensaje TTS a todos
+    socket.on('admin-tts', (mensaje) => {
+        if (!isAdmin) return;
+        if (typeof mensaje !== 'string' || !mensaje.trim()) return;
+        const texto = mensaje.trim().slice(0, 300);
+        io.emit('admin-mensaje', { texto });
+        log.ok(`Admin TTS: ${texto.slice(0, 60)}`);
+    });
+
     socket.on('disconnect', () => {
         if (currentRoom) leaveRoom(socket, currentRoom);
     });
@@ -230,3 +281,20 @@ server.listen(PORT, () => {
     log.info(`Admin panel -> http://localhost:${PORT}/admin.html`);
     log.warn(`Contrasena admin: ${ADMIN_PASSWORD}`);
 });
+
+// ─── Auto-ping (evita que Render Free pause el servicio) ──────────────────────
+if (process.env.RENDER_EXTERNAL_URL) {
+    const https = require('https');
+    const PING_INTERVAL_MS = 10 * 60 * 1000; // cada 10 minutos
+
+    setInterval(() => {
+        const url = `${process.env.RENDER_EXTERNAL_URL}/health`;
+        https.get(url, (res) => {
+            log.info(`Auto-ping OK: ${res.statusCode} → ${url}`);
+        }).on('error', (err) => {
+            log.warn(`Auto-ping fallido: ${err.message}`);
+        });
+    }, PING_INTERVAL_MS);
+
+    log.info(`Auto-ping activado → ${process.env.RENDER_EXTERNAL_URL}/health (cada 10 min)`);
+}
