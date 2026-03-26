@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>TikTok Live Rayo</title>
+<title>TikTok Live Reader</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <style>
@@ -258,7 +258,55 @@
     border-radius: 4px; padding: 1px 6px; margin-left: .4rem; vertical-align: middle;
   }
 
-  @keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  /* Card de like */
+  .like-card {
+    background: linear-gradient(135deg, rgba(254,44,85,.06), rgba(254,44,85,.03));
+    border: 1px solid rgba(254,44,85,.2);
+    border-radius: 10px; padding: .65rem .95rem;
+    display: flex; gap: .8rem; align-items: center;
+    animation: slideIn .25s cubic-bezier(.22,1,.36,1);
+  }
+  .like-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(254,44,85,.15);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .like-text { font-size: .8rem; color: var(--muted); }
+  .like-text strong { color: var(--accent); }
+
+  /* Card de share */
+  .share-card {
+    background: linear-gradient(135deg, rgba(180,100,255,.07), rgba(105,201,208,.04));
+    border: 1px solid rgba(180,100,255,.25);
+    border-radius: 10px; padding: .65rem .95rem;
+    display: flex; gap: .8rem; align-items: center;
+    animation: slideIn .25s cubic-bezier(.22,1,.36,1);
+  }
+  .share-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(180,100,255,.15);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .share-text { font-size: .8rem; color: var(--muted); }
+  .share-text strong { color: #b464ff; }
+
+  /* Card de mensaje admin */
+  .admin-card {
+    background: linear-gradient(135deg, rgba(245,200,66,.1), rgba(245,200,66,.04));
+    border: 1px solid rgba(245,200,66,.4);
+    border-radius: 10px; padding: .8rem .95rem;
+    display: flex; gap: .8rem; align-items: center;
+    animation: slideIn .25s cubic-bezier(.22,1,.36,1), giftPulse .6s ease;
+  }
+  .admin-card.playing { border-color: var(--gold); box-shadow: var(--glow-g); }
+  .admin-icon {
+    width: 33px; height: 33px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), #c8960a);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .admin-body { flex: 1; }
+  .admin-label { font-family: 'Space Mono', monospace; font-size: .6rem; color: var(--gold); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .2rem; }
+  .admin-text { font-size: .88rem; color: var(--text); line-height: 1.5; }
 
   .avatar {
     width: 33px; height: 33px; border-radius: 50%;
@@ -373,6 +421,20 @@
           <span class="stat-value" id="stat-follows" style="color:var(--accent2)">0</span>
           <span class="stat-label">Seguidores</span>
         </div>
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <span class="stat-value" id="stat-likes" style="color:var(--accent)">0</span>
+          <span class="stat-label">Likes</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b464ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+          </div>
+          <span class="stat-value" id="stat-shares" style="color:#b464ff">0</span>
+          <span class="stat-label">Shares</span>
+        </div>
       </div>
     </div>
     <div>
@@ -424,6 +486,16 @@
           <input type="checkbox" id="follow-toggle" checked />
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" x2="19" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
           Leer seguidores
+        </label>
+        <label class="check-label">
+          <input type="checkbox" id="like-toggle" checked />
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          Leer likes
+        </label>
+        <label class="check-label">
+          <input type="checkbox" id="share-toggle" checked />
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b464ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+          Leer shares
         </label>
         <label class="check-label">
           <input type="checkbox" id="gift-toggle" checked />
@@ -486,6 +558,8 @@
   let totalComments = 0;
   let totalGifts    = 0;
   let totalFollows  = 0;
+  let totalLikes    = 0;
+  let totalShares   = 0;
   let activeConfig  = { maxQueue:50, maxWords:0, maxChars:0, ttsRate:1.1, ttsPitch:1.0 };
 
   // Config del admin
@@ -598,6 +672,8 @@
   const audioToggle   = document.getElementById('audio-toggle');
   const giftToggle    = document.getElementById('gift-toggle');
   const followToggle  = document.getElementById('follow-toggle');
+  const likeToggle    = document.getElementById('like-toggle');
+  const shareToggle   = document.getElementById('share-toggle');
   const scrollToggle  = document.getElementById('scroll-toggle');
 
   btnConnect.addEventListener('click', () => {
@@ -710,6 +786,213 @@
     } catch (_) {}
   }
 
+  // ── Librería de sonidos Web Audio ─────────────────────────────────────────
+  function audioCtx() { return new (window.AudioContext || window.webkitAudioContext)(); }
+
+  const SOUNDS = {
+    aplausos() {
+      const ctx = audioCtx();
+      for (let i = 0; i < 8; i++) {
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.08, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * Math.exp(-j / (d.length * 0.3));
+        const src = ctx.createBufferSource();
+        const g = ctx.createGain();
+        src.buffer = buf; src.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.11);
+        src.start(ctx.currentTime + i * 0.11);
+      }
+      setTimeout(() => ctx.close(), 1200);
+    },
+    redoble() {
+      const ctx = audioCtx();
+      for (let i = 0; i < 16; i++) {
+        const t = ctx.currentTime + i * Math.max(0.015, 0.1 - i * 0.005);
+        const osc = ctx.createOscillator(); const g = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.frequency.value = 80 + Math.random() * 20; osc.type = 'sawtooth';
+        g.gain.setValueAtTime(0.22, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+        osc.start(t); osc.stop(t + 0.08);
+      }
+      // golpe final
+      const t2 = ctx.currentTime + 1.1;
+      const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
+      o2.connect(g2); g2.connect(ctx.destination);
+      o2.frequency.value = 60; o2.type = 'sine';
+      g2.gain.setValueAtTime(0.4, t2); g2.gain.exponentialRampToValueAtTime(0.001, t2 + 0.25);
+      o2.start(t2); o2.stop(t2 + 0.3);
+      setTimeout(() => ctx.close(), 1600);
+    },
+    fanfarria() {
+      const ctx = audioCtx();
+      [[392,0],[494,.15],[587,.3],[784,.45],[784,.65],[987,.8]].forEach(([f,t]) => {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sawtooth'; o.frequency.value = f;
+        const s = ctx.currentTime + t;
+        g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(0.25, s+.03);
+        g.gain.exponentialRampToValueAtTime(0.001, s+.18);
+        o.start(s); o.stop(s+.2);
+      });
+      setTimeout(() => ctx.close(), 1200);
+    },
+    campana() {
+      const ctx = audioCtx();
+      [880, 1100, 1320].forEach((f, i) => {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine'; o.frequency.value = f;
+        const s = ctx.currentTime + i * 0.05;
+        g.gain.setValueAtTime(0.25, s); g.gain.exponentialRampToValueAtTime(0.001, s + 1.5);
+        o.start(s); o.stop(s + 1.6);
+      });
+      setTimeout(() => ctx.close(), 2000);
+    },
+    risas() {
+      const ctx = audioCtx();
+      for (let i = 0; i < 6; i++) {
+        const t = ctx.currentTime + i * 0.18;
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine'; o.frequency.setValueAtTime(300 + i*20, t);
+        o.frequency.linearRampToValueAtTime(220 - i*10, t + 0.12);
+        g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        o.start(t); o.stop(t + 0.16);
+      }
+      setTimeout(() => ctx.close(), 1400);
+    },
+    fail() {
+      const ctx = audioCtx();
+      [[392,.0],[330,.2],[262,.4],[196,.6]].forEach(([f,t]) => {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sawtooth'; o.frequency.value = f;
+        const s = ctx.currentTime + t;
+        g.gain.setValueAtTime(0.22, s); g.gain.exponentialRampToValueAtTime(0.001, s+.18);
+        o.start(s); o.stop(s+.2);
+      });
+      setTimeout(() => ctx.close(), 1000);
+    },
+    rimshot() {
+      const ctx = audioCtx();
+      // kick
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination); o.type='sine';
+      o.frequency.setValueAtTime(150, ctx.currentTime); o.frequency.exponentialRampToValueAtTime(40, ctx.currentTime+.1);
+      g.gain.setValueAtTime(0.5, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+.15);
+      o.start(); o.stop(ctx.currentTime+.16);
+      // hihat
+      const t2 = ctx.currentTime + 0.2;
+      const buf = ctx.createBuffer(1, ctx.sampleRate*0.05, ctx.sampleRate);
+      const d = buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+      const src = ctx.createBufferSource(); const g2 = ctx.createGain();
+      const flt = ctx.createBiquadFilter(); flt.type='highpass'; flt.frequency.value=8000;
+      src.buffer=buf; src.connect(flt); flt.connect(g2); g2.connect(ctx.destination);
+      g2.gain.setValueAtTime(0.18, t2); g2.gain.exponentialRampToValueAtTime(0.001, t2+.04);
+      src.start(t2);
+      setTimeout(() => ctx.close(), 600);
+    },
+    suspenso() {
+      const ctx = audioCtx();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination); o.type='sine';
+      o.frequency.setValueAtTime(80, ctx.currentTime);
+      o.frequency.linearRampToValueAtTime(440, ctx.currentTime+2);
+      g.gain.setValueAtTime(0, ctx.currentTime); g.gain.linearRampToValueAtTime(0.28, ctx.currentTime+.3);
+      g.gain.linearRampToValueAtTime(0.28, ctx.currentTime+1.8); g.gain.linearRampToValueAtTime(0, ctx.currentTime+2.1);
+      o.start(); o.stop(ctx.currentTime+2.2);
+      setTimeout(() => ctx.close(), 2500);
+    },
+    abucheo() {
+      const ctx = audioCtx();
+      for (let i = 0; i < 5; i++) {
+        const t = ctx.currentTime + i * 0.22;
+        const buf = ctx.createBuffer(1, ctx.sampleRate*0.15, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for(let j=0;j<d.length;j++) d[j]=(Math.random()*2-1)*0.6*Math.exp(-j/(d.length*0.5));
+        const src=ctx.createBufferSource(); const g=ctx.createGain();
+        const flt=ctx.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=400;
+        src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+        g.gain.value=0.3; src.start(t);
+      }
+      setTimeout(() => ctx.close(), 1400);
+    },
+    alerta() {
+      const ctx = audioCtx();
+      [0, 0.2].forEach(t => {
+        const o=ctx.createOscillator(); const g=ctx.createGain();
+        o.connect(g); g.connect(ctx.destination); o.type='square'; o.frequency.value=880;
+        const s=ctx.currentTime+t;
+        g.gain.setValueAtTime(0.2,s); g.gain.exponentialRampToValueAtTime(0.001,s+.12);
+        o.start(s); o.stop(s+.13);
+      });
+      setTimeout(() => ctx.close(), 600);
+    },
+    levelup() {
+      const ctx = audioCtx();
+      [262,330,392,523,659,784].forEach((f,i) => {
+        const o=ctx.createOscillator(); const g=ctx.createGain();
+        o.connect(g); g.connect(ctx.destination); o.type='square'; o.frequency.value=f;
+        const s=ctx.currentTime+i*0.08;
+        g.gain.setValueAtTime(0.18,s); g.gain.exponentialRampToValueAtTime(0.001,s+.1);
+        o.start(s); o.stop(s+.11);
+      });
+      setTimeout(() => ctx.close(), 1000);
+    },
+    moneda() {
+      const ctx = audioCtx();
+      [1400,1800].forEach((f,i) => {
+        const o=ctx.createOscillator(); const g=ctx.createGain();
+        o.connect(g); g.connect(ctx.destination); o.type='sine'; o.frequency.value=f;
+        const s=ctx.currentTime+i*0.06;
+        g.gain.setValueAtTime(0.3,s); g.gain.exponentialRampToValueAtTime(0.001,s+.18);
+        o.start(s); o.stop(s+.2);
+      });
+      setTimeout(() => ctx.close(), 600);
+    },
+    gameover() {
+      const ctx = audioCtx();
+      [[392,.0],[330,.25],[262,.5],[196,.75],[147,1.0]].forEach(([f,t]) => {
+        const o=ctx.createOscillator(); const g=ctx.createGain();
+        o.connect(g); g.connect(ctx.destination); o.type='square'; o.frequency.value=f;
+        const s=ctx.currentTime+t;
+        g.gain.setValueAtTime(0.2,s); g.gain.exponentialRampToValueAtTime(0.001,s+.22);
+        o.start(s); o.stop(s+.24);
+      });
+      setTimeout(() => ctx.close(), 1600);
+    },
+    explosion() {
+      const ctx = audioCtx();
+      const buf=ctx.createBuffer(1,ctx.sampleRate*0.6,ctx.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*0.15));
+      const src=ctx.createBufferSource(); const g=ctx.createGain();
+      const flt=ctx.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=300;
+      src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+      g.gain.value=0.6; src.start();
+      setTimeout(() => ctx.close(), 800);
+    },
+    sirena() {
+      const ctx = audioCtx();
+      const o=ctx.createOscillator(); const g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination); o.type='sawtooth';
+      for(let i=0;i<4;i++){
+        o.frequency.setValueAtTime(600, ctx.currentTime+i*0.4);
+        o.frequency.linearRampToValueAtTime(900, ctx.currentTime+i*0.4+0.2);
+        o.frequency.linearRampToValueAtTime(600, ctx.currentTime+i*0.4+0.4);
+      }
+      g.gain.setValueAtTime(0.22, ctx.currentTime);
+      g.gain.setValueAtTime(0, ctx.currentTime+1.6);
+      o.start(); o.stop(ctx.currentTime+1.65);
+      setTimeout(() => ctx.close(), 2000);
+    },
+  };
+
+  function playSound(id) { try { SOUNDS[id]?.(); } catch(_) {} }
+
+  // Recibir sonido disparado por admin
+  socket.on('play-sound', (id) => playSound(id));
+
   // ── Nuevo seguidor ────────────────────────────────────────────────────────
   socket.on('nuevo-follow', ({ usuario }) => {
     totalFollows++;
@@ -748,6 +1031,63 @@
     }
   });
 
+  // ── Nuevo like ────────────────────────────────────────────────────────────
+  socket.on('nuevo-like', ({ usuario, likeCount }) => {
+    totalLikes++;
+    document.getElementById('stat-likes').textContent = totalLikes;
+    if (emptyState) emptyState.style.display = 'none';
+    const card = document.createElement('div');
+    card.className = 'like-card';
+    card.innerHTML = `
+      <div class="like-icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--accent)" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </div>
+      <p class="like-text"><strong>@${esc(usuario)}</strong> dio like al live</p>`;
+    container.appendChild(card);
+    if (scrollToggle.checked) container.scrollTop = 0;
+    if (likeToggle.checked) speak(`gracias ${usuario} por los likes`, card, true);
+  });
+
+  // ── Nuevo share ───────────────────────────────────────────────────────────
+  socket.on('nuevo-share', ({ usuario }) => {
+    totalShares++;
+    document.getElementById('stat-shares').textContent = totalShares;
+    if (emptyState) emptyState.style.display = 'none';
+    const card = document.createElement('div');
+    card.className = 'share-card';
+    card.innerHTML = `
+      <div class="share-icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b464ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+      </div>
+      <p class="share-text"><strong>@${esc(usuario)}</strong> compartió el live</p>`;
+    container.appendChild(card);
+    if (scrollToggle.checked) container.scrollTop = 0;
+    if (shareToggle.checked) speak(`gracias ${usuario} por compartir el live`, card, true);
+  });
+
+  // ── Mensaje admin ─────────────────────────────────────────────────────────
+  socket.on('admin-mensaje', ({ texto }) => {
+    if (emptyState) emptyState.style.display = 'none';
+    const card = document.createElement('div');
+    card.className = 'admin-card';
+    card.innerHTML = `
+      <div class="admin-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="admin-body">
+        <div class="admin-label">★ mensaje del streamer</div>
+        <div class="admin-text">${esc(texto)}</div>
+      </div>`;
+    container.appendChild(card);
+    if (scrollToggle.checked) container.scrollTop = 0;
+    // TTS prioritario: se inserta al frente de la cola
+    const clean = stripEmojis(texto);
+    if (clean) {
+      ttsQueue.unshift({ texto: clean, truncated: false, card, isGift: true });
+      if (!isSpeaking) playNext();
+    }
+  });
+
   // ── Controles ─────────────────────────────────────────────────────────────
   document.getElementById('volume-slider').addEventListener('input', function() {
     document.getElementById('volume-val').textContent = Math.round(this.value * 100) + '%';
@@ -755,10 +1095,12 @@
 
   document.getElementById('btn-clear').addEventListener('click', () => {
     container.innerHTML = '<div class="empty-state" id="empty-state"><div class="empty-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><p>Conecta a un Live de TikTok<br/>y los comentarios aparecerán aquí en tiempo real.</p></div>';
-    totalComments = 0; totalGifts = 0; totalFollows = 0;
+    totalComments = 0; totalGifts = 0; totalFollows = 0; totalLikes = 0; totalShares = 0;
     document.getElementById('stat-total').textContent = 0;
     document.getElementById('stat-gifts').textContent = 0;
     document.getElementById('stat-follows').textContent = 0;
+    document.getElementById('stat-likes').textContent = 0;
+    document.getElementById('stat-shares').textContent = 0;
     ttsQueue = [];
     synth.cancel(); isSpeaking = false;
   });
