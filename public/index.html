@@ -702,7 +702,7 @@
   }
 
   // ── Nuevo comentario ──────────────────────────────────────────────────────
-  socket.on('nuevo-comentario', ({ usuario, mensaje }) => {
+  socket.on('nuevo-comentario', ({ usuario, usuarioOriginal, mensaje }) => {
     totalComments++;
     document.getElementById('stat-total').textContent = totalComments;
     if (emptyState) emptyState.style.display = 'none';
@@ -710,11 +710,16 @@
     const card = document.createElement('div');
     card.className = 'comment-card';
     const time = new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    const tieneApodo = usuarioOriginal && usuarioOriginal !== usuario;
+    const badgeOriginal = tieneApodo
+      ? `<span class="truncated-badge" title="Username TikTok">@${esc(usuarioOriginal)}</span>`
+      : '';
     card.innerHTML = `
       <div class="avatar">${esc(usuario).slice(0,2).toUpperCase()}</div>
       <div class="comment-body">
         <div class="comment-meta">
-          <span class="comment-user">@${esc(usuario)}</span>
+          <span class="comment-user">${esc(usuario)}</span>
+          ${badgeOriginal}
           <span class="comment-time">${time}</span>
         </div>
         <p class="comment-text">${esc(mensaje)}</p>
@@ -725,7 +730,7 @@
   });
 
   // ── Nuevo regalo ──────────────────────────────────────────────────────────
-  socket.on('nuevo-regalo', ({ usuario }) => {
+  socket.on('nuevo-regalo', ({ usuario, usuarioOriginal }) => {
     totalGifts++;
     document.getElementById('stat-gifts').textContent = totalGifts;
     if (emptyState) emptyState.style.display = 'none';
@@ -734,6 +739,10 @@
     card.className = 'gift-card';
     const time = new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
     const nombreSeguro = esc(usuario);
+    const tieneApodo = usuarioOriginal && usuarioOriginal !== usuario;
+    const badgeOriginal = tieneApodo
+      ? `<span class="truncated-badge" title="Username TikTok">@${esc(usuarioOriginal)}</span>`
+      : '';
 
     card.innerHTML = `
       <div class="gift-icon">
@@ -741,7 +750,8 @@
       </div>
       <div class="gift-body">
         <div class="gift-meta">
-          <span class="gift-user">@${nombreSeguro}</span>
+          <span class="gift-user">${nombreSeguro}</span>
+          ${badgeOriginal}
           <span class="gift-time">${time}</span>
           <span class="gift-badge">
             <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7"/></svg>
@@ -994,7 +1004,7 @@
   socket.on('play-sound', (id) => playSound(id));
 
   // ── Nuevo seguidor ────────────────────────────────────────────────────────
-  socket.on('nuevo-follow', ({ usuario }) => {
+  socket.on('nuevo-follow', ({ usuario, usuarioOriginal }) => {
     totalFollows++;
     document.getElementById('stat-follows').textContent = totalFollows;
     if (emptyState) emptyState.style.display = 'none';
@@ -1003,6 +1013,10 @@
     card.className = 'follow-card';
     const time = new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
     const nombreSeguro = esc(usuario);
+    const tieneApodo = usuarioOriginal && usuarioOriginal !== usuario;
+    const badgeOriginal = tieneApodo
+      ? `<span class="truncated-badge" title="Username TikTok">@${esc(usuarioOriginal)}</span>`
+      : '';
 
     card.innerHTML = `
       <div class="follow-icon">
@@ -1010,7 +1024,8 @@
       </div>
       <div class="follow-body">
         <div class="follow-meta">
-          <span class="follow-user">@${nombreSeguro}</span>
+          <span class="follow-user">${nombreSeguro}</span>
+          ${badgeOriginal}
           <span class="follow-time">${time}</span>
           <span class="follow-badge">
             <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
@@ -1042,13 +1057,12 @@
       <div class="like-icon">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--accent)" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
       </div>
-      <p class="like-text"><strong>@${esc(usuario)}</strong> dio like al live</p>`;
+      <p class="like-text"><strong>${esc(usuario)}</strong> dio like al live</p>`;
     container.appendChild(card);
     if (scrollToggle.checked) container.scrollTop = 0;
     if (likeToggle.checked) speak(`gracias ${usuario} por los likes`, card, true);
   });
 
-  // ── Nuevo share ───────────────────────────────────────────────────────────
   socket.on('nuevo-share', ({ usuario }) => {
     totalShares++;
     document.getElementById('stat-shares').textContent = totalShares;
@@ -1059,7 +1073,7 @@
       <div class="share-icon">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b464ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
       </div>
-      <p class="share-text"><strong>@${esc(usuario)}</strong> compartió el live</p>`;
+      <p class="share-text"><strong>${esc(usuario)}</strong> compartió el live</p>`;
     container.appendChild(card);
     if (scrollToggle.checked) container.scrollTop = 0;
     if (shareToggle.checked) speak(`gracias ${usuario} por compartir el live`, card, true);
