@@ -263,6 +263,42 @@
     display: flex; align-items: center; gap: .5rem;
   }
   .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  /* ── Apodos ────────────────────────────────────────────────────────────── */
+  .apodos-panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.35rem 1.25rem; margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: .9rem;
+  }
+  .apodos-form { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .apodos-input {
+    flex: 1; min-width: 120px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: .65rem .85rem; color: var(--text); font-family: 'Space Mono', monospace;
+    font-size: .8rem; outline: none; transition: border-color .2s;
+  }
+  .apodos-input:focus { border-color: var(--accent2); box-shadow: var(--glow2); }
+  .apodos-input::placeholder { color: var(--muted); }
+  .btn-apodo-add {
+    padding: .65rem 1.1rem; border-radius: 8px; border: none;
+    background: var(--accent2); color: #000; font-family: 'Syne', sans-serif;
+    font-size: .82rem; font-weight: 800; cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; gap: .4rem; white-space: nowrap;
+  }
+  .btn-apodo-add:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .apodos-list { display: flex; flex-direction: column; gap: .45rem; }
+  .apodo-row {
+    display: flex; align-items: center; gap: .6rem;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: .55rem .85rem; transition: border-color .2s;
+  }
+  .apodo-row:hover { border-color: rgba(105,201,208,.3); }
+  .apodo-username { font-family: 'Space Mono', monospace; font-size: .72rem; color: var(--muted); flex: 1; }
+  .apodo-arrow { color: var(--border); font-size: .7rem; }
+  .apodo-nombre { font-family: 'Space Mono', monospace; font-size: .78rem; color: var(--accent2); font-weight: 700; flex: 1; }
+  .btn-apodo-del {
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    display: flex; align-items: center; padding: 2px; border-radius: 4px; transition: color .15s;
+  }
+  .btn-apodo-del:hover { color: var(--accent); }
+  .apodos-empty { font-size: .75rem; color: var(--muted); font-family: 'Space Mono', monospace; text-align: center; padding: .5rem 0; }
 </style>
 </head>
 <body>
@@ -465,6 +501,30 @@
     </div>
   </div>
 
+  <!-- Panel de apodos -->
+  <div class="apodos-panel">
+    <div class="card-header">
+      <div class="card-icon icon-teal">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div>
+        <div class="card-title">Apodos de usuarios</div>
+        <div class="card-desc">El TTS leerá el apodo en lugar del username de TikTok</div>
+      </div>
+    </div>
+    <div class="apodos-form">
+      <input type="text" class="apodos-input" id="apodo-username" placeholder="usuario_tiktok (sin @)" autocomplete="off" />
+      <input type="text" class="apodos-input" id="apodo-nombre" placeholder="Apodo (ej: Juanito)" autocomplete="off" maxlength="40" />
+      <button class="btn-apodo-add" id="btn-apodo-add">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+        Guardar apodo
+      </button>
+    </div>
+    <div class="apodos-list" id="apodos-list">
+      <div class="apodos-empty">No hay apodos guardados aún</div>
+    </div>
+  </div>
+
   <!-- Panel de sonidos -->
   <div class="sound-panel">
     <div class="card-header">
@@ -635,12 +695,52 @@
     } catch (_) {}
   }
 
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    const span = t.querySelector('span') || t;
-    if (msg) t.childNodes[t.childNodes.length - 1].textContent = ' ' + msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
+  // ── Apodos ────────────────────────────────────────────────────────────────
+  socket.on('apodos-update', (apodosObj) => renderApodos(apodosObj));
+
+  function renderApodos(apodosObj) {
+    const list = document.getElementById('apodos-list');
+    const entries = Object.entries(apodosObj);
+    if (!entries.length) {
+      list.innerHTML = '<div class="apodos-empty">No hay apodos guardados aún</div>';
+      return;
+    }
+    list.innerHTML = entries.map(([user, nombre]) => `
+      <div class="apodo-row">
+        <span class="apodo-username">@${esc(user)}</span>
+        <span class="apodo-arrow">→</span>
+        <span class="apodo-nombre">${esc(nombre)}</span>
+        <button class="btn-apodo-del" data-user="${esc(user)}" title="Eliminar apodo">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
+      </div>`).join('');
+
+    list.querySelectorAll('.btn-apodo-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        socket.emit('admin-delete-apodo', btn.dataset.user);
+      });
+    });
+  }
+
+  document.getElementById('btn-apodo-add').addEventListener('click', () => {
+    const username = document.getElementById('apodo-username').value.trim().replace(/^@/, '').toLowerCase();
+    const apodo    = document.getElementById('apodo-nombre').value.trim();
+    if (!username) { showToast('Ingresa el username de TikTok'); return; }
+    if (!apodo)    { showToast('Ingresa el apodo'); return; }
+    socket.emit('admin-set-apodo', { username, apodo });
+    document.getElementById('apodo-username').value = '';
+    document.getElementById('apodo-nombre').value   = '';
+    showToast(`Apodo guardado: @${username} → ${apodo}`);
+  });
+
+  ['apodo-username','apodo-nombre'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btn-apodo-add').click();
+    });
+  });
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 </script>
 </body>
