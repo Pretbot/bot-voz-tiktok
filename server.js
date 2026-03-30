@@ -15,6 +15,33 @@ const log = {
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234';
 
+// ─── Apodos ───────────────────────────────────────────────────────────────────
+const fs   = require('fs');
+const path_apodos = path.join(__dirname, 'apodos.json');
+
+function loadApodos() {
+    try {
+        if (fs.existsSync(path_apodos)) {
+            const raw = fs.readFileSync(path_apodos, 'utf8');
+            return JSON.parse(raw); // { "usuario_largo_123": "Juanito", ... }
+        }
+    } catch (e) { log.error('Error cargando apodos:', e.message); }
+    return {};
+}
+
+function saveApodos(apodos) {
+    try { fs.writeFileSync(path_apodos, JSON.stringify(apodos, null, 2), 'utf8'); }
+    catch (e) { log.error('Error guardando apodos:', e.message); }
+}
+
+let apodos = loadApodos();
+
+// Devuelve el apodo si existe, o el username original
+function resolveNombre(username) {
+    const key = username.toLowerCase().trim();
+    return apodos[key] || username;
+}
+
 // ─── Configuracion global ─────────────────────────────────────────────────────
 let globalConfig = {
     maxQueue:  50,
@@ -49,9 +76,10 @@ function enqueue(username, usuario, mensaje) {
         log.warn(`[${username}] Cola llena (${globalConfig.maxQueue}), descartando: ${usuario}`);
         return;
     }
-    room.queue.push({ usuario, mensaje });
-    io.to(username).emit('nuevo-comentario', { usuario, mensaje });
-    log.ok(`[${username}] ${usuario}: ${mensaje.slice(0, 50)}`);
+    const apodo = resolveNombre(usuario);
+    room.queue.push({ usuario: apodo, usuarioOriginal: usuario, mensaje });
+    io.to(username).emit('nuevo-comentario', { usuario: apodo, usuarioOriginal: usuario, mensaje });
+    log.ok(`[${username}] ${apodo} (${usuario}): ${mensaje.slice(0, 50)}`);
 }
 
 // ─── Enqueue regalo ───────────────────────────────────────────────────────────
@@ -59,17 +87,18 @@ function enqueueGift(username, usuario) {
     const room = rooms.get(username);
     if (!room) return;
     if (room.queue.length >= globalConfig.maxQueue) return;
-    // Emite evento especial de regalo al frontend
-    io.to(username).emit('nuevo-regalo', { usuario });
-    log.ok(`[${username}] REGALO de ${usuario}`);
+    const apodo = resolveNombre(usuario);
+    io.to(username).emit('nuevo-regalo', { usuario: apodo, usuarioOriginal: usuario });
+    log.ok(`[${username}] REGALO de ${apodo} (${usuario})`);
 }
 
 // ─── Enqueue seguidor ─────────────────────────────────────────────────────────
 function enqueueFollow(username, usuario) {
     const room = rooms.get(username);
     if (!room) return;
-    io.to(username).emit('nuevo-follow', { usuario });
-    log.ok(`[${username}] FOLLOW de ${usuario}`);
+    const apodo = resolveNombre(usuario);
+    io.to(username).emit('nuevo-follow', { usuario: apodo, usuarioOriginal: usuario });
+    log.ok(`[${username}] FOLLOW de ${apodo} (${usuario})`);
 }
 
 // ─── Like ─────────────────────────────────────────────────────────────────────
@@ -79,14 +108,16 @@ function handleLike(username, usuario, likeCount) {
     const now = Date.now();
     if (likeThrottle.has(key) && now - likeThrottle.get(key) < 30_000) return;
     likeThrottle.set(key, now);
-    io.to(username).emit('nuevo-like', { usuario, likeCount });
-    log.ok(`[${username}] LIKE x${likeCount} de ${usuario}`);
+    const apodo = resolveNombre(usuario);
+    io.to(username).emit('nuevo-like', { usuario: apodo, usuarioOriginal: usuario, likeCount });
+    log.ok(`[${username}] LIKE x${likeCount} de ${apodo} (${usuario})`);
 }
 
 // ─── Share ────────────────────────────────────────────────────────────────────
 function handleShare(username, usuario) {
-    io.to(username).emit('nuevo-share', { usuario });
-    log.ok(`[${username}] SHARE de ${usuario}`);
+    const apodo = resolveNombre(usuario);
+    io.to(username).emit('nuevo-share', { usuario: apodo, usuarioOriginal: usuario });
+    log.ok(`[${username}] SHARE de ${apodo} (${usuario})`);
 }
 
 // ─── Conexion TikTok Live ─────────────────────────────────────────────────────
@@ -198,6 +229,7 @@ io.on('connection', (socket) => {
             isAdmin = true;
             socket.join('admins');
             socket.emit('admin-auth', { ok: true, config: globalConfig });
+            socket.emit('apodos-update', apodos);
             log.ok(`Admin autenticado: ${socket.id}`);
         } else {
             socket.emit('admin-auth', { ok: false });
@@ -243,6 +275,39 @@ io.on('connection', (socket) => {
         const texto = mensaje.trim().slice(0, 300);
         io.emit('admin-mensaje', { texto });
         log.ok(`Admin TTS: ${texto.slice(0, 60)}`);
+    });
+
+    // ─── Apodos (solo admin) ──────────────────────────────────────────────────
+    socket.on('admin-set-apodo', ({ username, apodo }) => {
+        if (!isAdmin) { socket.emit('status', { type: 'error', message: 'No autorizado' }); return; }
+        if (typeof username !== 'string' || !username.trim()) return;
+        const key = username.trim().replace(/^@/, '').toLowerCase();
+        const valor = (apodo || '').trim();
+        if (valor) {
+            apodos[key] = valor;
+            log.ok(`Apodo asignado: ${key} → ${valor}`);
+        } else {
+            delete apodos[key];
+            log.ok(`Apodo eliminado: ${key}`);
+        }
+        saveApodos(apodos);
+        io.to('admins').emit('apodos-update', apodos);
+    });
+
+    socket.on('admin-get-apodos', () => {
+        if (!isAdmin) return;
+        socket.emit('apodos-update', apodos);
+    });
+
+    socket.on('admin-delete-apodo', (username) => {
+        if (!isAdmin) return;
+        const key = (username || '').trim().replace(/^@/, '').toLowerCase();
+        if (apodos[key]) {
+            delete apodos[key];
+            saveApodos(apodos);
+            log.ok(`Apodo eliminado: ${key}`);
+        }
+        io.to('admins').emit('apodos-update', apodos);
     });
 
     socket.on('disconnect', () => {
