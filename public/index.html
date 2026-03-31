@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>TikTok Live Rayo</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+<link rel="icon" href="data:,">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <style>
   :root {
@@ -1118,6 +1119,52 @@
     ttsQueue = [];
     synth.cancel(); isSpeaking = false;
   });
+
+
+  // ── Musica desde admin ────────────────────────────────────────────────────
+  let viewerAudio   = null;
+  let viewerIframe  = null;
+
+  socket.on('music-command', (cmd) => {
+    if (!cmd || !cmd.action) return;
+
+    if (cmd.action === 'stop') {
+      if (viewerAudio)  { viewerAudio.pause(); viewerAudio.src = ''; viewerAudio = null; }
+      if (viewerIframe) { viewerIframe.remove(); viewerIframe = null; }
+      return;
+    }
+
+    if (cmd.action === 'play') {
+      // Detener anterior si existe
+      if (viewerAudio)  { viewerAudio.pause(); viewerAudio.src = ''; viewerAudio = null; }
+      if (viewerIframe) { viewerIframe.remove(); viewerIframe = null; }
+
+      if (cmd.type === 'audio') {
+        viewerAudio = new Audio(cmd.url);
+        viewerAudio.volume    = typeof cmd.volume === 'number' ? cmd.volume : 0.7;
+        viewerAudio.loop      = !!cmd.loop;
+        if (cmd.currentTime)  viewerAudio.currentTime = cmd.currentTime;
+        viewerAudio.play().catch(() => {});
+      } else if (cmd.type === 'youtube') {
+        const ytMatch = cmd.url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+        if (!ytMatch) return;
+        viewerIframe = document.createElement('iframe');
+        viewerIframe.style.cssText = 'position:fixed;bottom:-200px;left:-200px;width:1px;height:1px;opacity:0;pointer-events:none;';
+        viewerIframe.allow = 'autoplay';
+        viewerIframe.src   = `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&controls=0&loop=${cmd.loop?1:0}`;
+        document.body.appendChild(viewerIframe);
+      }
+    }
+
+    if (cmd.action === 'pause') {
+      if (viewerAudio) viewerAudio.pause();
+    }
+
+    if (cmd.action === 'volume' && viewerAudio) {
+      viewerAudio.volume = typeof cmd.volume === 'number' ? cmd.volume : 0.7;
+    }
+  });
+
 
   function esc(s) {
     if (!s) return '';
