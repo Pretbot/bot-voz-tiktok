@@ -310,6 +310,14 @@ io.on('connection', (socket) => {
         io.to('admins').emit('apodos-update', apodos);
     });
 
+    // ─── Música (solo admin) ──────────────────────────────────────────────────
+    socket.on('admin-music-share', (payload) => {
+        if (!isAdmin) return;
+        if (!payload || typeof payload !== 'object') return;
+        log.ok(`Admin música → ${payload.action} "${payload.title || payload.url || ''}"`);
+        io.emit('music-command', payload);
+    });
+
     socket.on('disconnect', () => {
         if (currentRoom) leaveRoom(socket, currentRoom);
     });
