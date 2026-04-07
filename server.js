@@ -49,6 +49,7 @@ let globalConfig = {
     maxChars:  0,
     ttsRate:   1.1,
     ttsPitch:  1.0,
+    botMuted:  false,
 };
 
 // ─── App Setup ────────────────────────────────────────────────────────────────
@@ -275,6 +276,14 @@ io.on('connection', (socket) => {
         const texto = mensaje.trim().slice(0, 300);
         io.emit('admin-mensaje', { texto });
         log.ok(`Admin TTS: ${texto.slice(0, 60)}`);
+    });
+
+    // ─── Silenciar/activar bot (solo admin) ──────────────────────────────────
+    socket.on('admin-toggle-mute', () => {
+        if (!isAdmin) return;
+        globalConfig.botMuted = !globalConfig.botMuted;
+        log.ok(`Bot ${globalConfig.botMuted ? 'SILENCIADO' : 'ACTIVADO'}`);
+        io.emit('config-update', globalConfig);
     });
 
     // ─── Apodos (solo admin) ──────────────────────────────────────────────────
