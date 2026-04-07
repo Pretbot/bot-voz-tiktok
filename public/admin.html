@@ -362,7 +362,45 @@
   .btn-music-stop-share:hover { color: var(--accent); border-color: var(--accent); }
   .music-empty { font-size: .75rem; color: var(--muted); font-family: "Space Mono", monospace; text-align: center; padding: .4rem 0; }
 
-  /* ── Apodos ────────────────────────────────────────────────────────────── */
+  /* ── Botón Mute Global ─────────────────────────────────────────────────── */
+  .mute-panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.35rem 1.25rem; margin-bottom: 1.2rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .mute-info { display: flex; align-items: center; gap: .75rem; }
+  .mute-status-text { display: flex; flex-direction: column; gap: .15rem; }
+  .mute-status-text .card-title { font-size: .9rem; }
+  .mute-status-text .card-desc  { font-size: .7rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+
+  .btn-mute-toggle {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .75rem 1.4rem; border-radius: 10px; border: none;
+    font-family: 'Syne', sans-serif; font-size: .9rem; font-weight: 800;
+    cursor: pointer; transition: all .25s; white-space: nowrap;
+  }
+  .btn-mute-toggle.active {
+    background: linear-gradient(135deg, var(--accent2), #3aa8b0);
+    color: #000; box-shadow: var(--glow2);
+  }
+  .btn-mute-toggle.muted {
+    background: linear-gradient(135deg, var(--accent), #c0213d);
+    color: #fff; box-shadow: var(--glow);
+    animation: mutePulse 1.8s ease infinite;
+  }
+  @keyframes mutePulse {
+    0%,100% { box-shadow: var(--glow); }
+    50%      { box-shadow: 0 0 28px rgba(254,44,85,.7); }
+  }
+  .mute-badge {
+    display: inline-flex; align-items: center; gap: .35rem;
+    font-family: 'Space Mono', monospace; font-size: .6rem; letter-spacing: .1em;
+    text-transform: uppercase; padding: .22rem .65rem; border-radius: 20px; border: 1px solid;
+  }
+  .mute-badge.on  { color: var(--accent2); border-color: rgba(105,201,208,.35); background: rgba(105,201,208,.08); }
+  .mute-badge.off { color: var(--accent);  border-color: rgba(254,44,85,.35);   background: rgba(254,44,85,.08);  animation: mutePulse 1.8s ease infinite; }
+
+
   .apodos-panel {
     background: var(--card); border: 1px solid var(--border); border-radius: 14px;
     padding: 1.35rem 1.25rem; margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: .9rem;
@@ -702,6 +740,30 @@
     </div>
   </div>
 
+  <!-- Panel Silenciar Bot -->
+  <div class="mute-panel" id="mute-panel">
+    <div class="mute-info">
+      <div class="card-icon icon-teal" id="mute-icon-wrap">
+        <svg id="icon-mic-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+        <svg id="icon-mic-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+      </div>
+      <div class="mute-status-text">
+        <div class="card-title">Control de voz del bot</div>
+        <div class="card-desc" id="mute-desc">El TTS está activo para todos los viewers</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <span class="mute-badge on" id="mute-badge">
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+        <span id="mute-badge-text">ACTIVO</span>
+      </span>
+      <button class="btn-mute-toggle active" id="btn-mute-toggle">
+        <svg id="btn-mic-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+        Silenciar bot
+      </button>
+    </div>
+  </div>
+
   <!-- Panel de sonidos -->
   <div class="sound-panel">
     <div class="card-header">
@@ -765,7 +827,10 @@
     if (ok) {
       loginScreen.style.display = 'none';
       adminPanel.style.display = 'block';
-      if (config) applyConfigToUI(config);
+      if (config) {
+        applyConfigToUI(config);
+        updateMuteUI(!!config.botMuted);
+      }
       fetchRooms();
       setInterval(fetchRooms, 5000);
     } else {
@@ -827,6 +892,50 @@
       ttsRate:  parseFloat(document.getElementById('ctrl-ttsRate').value),
       ttsPitch: parseFloat(document.getElementById('ctrl-ttsPitch').value),
     });
+  });
+
+  // ── Control de silencio del bot ───────────────────────────────────────────
+  function updateMuteUI(botMuted) {
+    const btn      = document.getElementById('btn-mute-toggle');
+    const badge    = document.getElementById('mute-badge');
+    const badgeTxt = document.getElementById('mute-badge-text');
+    const desc     = document.getElementById('mute-desc');
+    const iconWrap = document.getElementById('mute-icon-wrap');
+    const micOn    = document.getElementById('icon-mic-on');
+    const micOff   = document.getElementById('icon-mic-off');
+    const btnIcon  = document.getElementById('btn-mic-icon');
+
+    if (botMuted) {
+      // Estado: SILENCIADO
+      btn.className = 'btn-mute-toggle muted';
+      btn.innerHTML = `<svg id="btn-mic-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg> Activar bot`;
+      badge.className = 'mute-badge off';
+      badgeTxt.textContent = 'SILENCIADO';
+      desc.textContent = '🔇 TTS desactivado — los viewers no escuchan nada';
+      iconWrap.className = 'card-icon icon-red';
+      micOn.style.display  = 'none';
+      micOff.style.display = '';
+    } else {
+      // Estado: ACTIVO
+      btn.className = 'btn-mute-toggle active';
+      btn.innerHTML = `<svg id="btn-mic-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg> Silenciar bot`;
+      badge.className = 'mute-badge on';
+      badgeTxt.textContent = 'ACTIVO';
+      desc.textContent = '🎙️ El TTS está activo para todos los viewers';
+      iconWrap.className = 'card-icon icon-teal';
+      micOn.style.display  = '';
+      micOff.style.display = 'none';
+    }
+  }
+
+  document.getElementById('btn-mute-toggle').addEventListener('click', () => {
+    socket.emit('admin-toggle-mute');
+  });
+
+  // Actualizar UI de mute cuando llega config-update
+  socket.on('config-update', (cfg) => {
+    if (typeof cfg.botMuted !== 'undefined') updateMuteUI(cfg.botMuted);
+    // (la config de sliders se aplica en applyConfigToUI si el admin está logueado)
   });
 
   // ── Botones de sonido ─────────────────────────────────────────────────────
