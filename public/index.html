@@ -339,6 +339,17 @@
   .audio-indicator span:nth-child(4){height:12px;animation-delay:.1s}
   @keyframes eq { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.3)} }
 
+  /* Barra de silencio */
+  .mute-bar {
+    display: none; align-items: center; justify-content: center; gap: .6rem;
+    background: rgba(254,44,85,.12); border-bottom: 1px solid rgba(254,44,85,.3);
+    padding: .5rem 1.5rem;
+    font-family: 'Space Mono', monospace; font-size: .7rem; color: var(--accent);
+    letter-spacing: .08em; animation: muteBarIn .3s ease;
+  }
+  @keyframes muteBarIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+  .mute-bar svg { flex-shrink: 0; }
+
   @media (max-width:720px) {
     main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
     aside { border-right: none; border-bottom: 1px solid var(--border); }
@@ -358,6 +369,12 @@
   </div>
   <span class="header-sub">comentarios en tiempo real</span>
 </header>
+
+<!-- Barra de silencio (visible solo cuando admin silencia el bot) -->
+<div class="mute-bar" id="mute-bar">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+  BOT SILENCIADO POR EL ADMIN — El TTS está desactivado
+</div>
 
 <main>
   <aside>
@@ -561,7 +578,7 @@
   let totalFollows  = 0;
   let totalLikes    = 0;
   let totalShares   = 0;
-  let activeConfig  = { maxQueue:50, maxWords:0, maxChars:0, ttsRate:1.1, ttsPitch:1.0 };
+  let activeConfig  = { maxQueue:50, maxWords:0, maxChars:0, ttsRate:1.1, ttsPitch:1.0, botMuted:false };
 
   // Config del admin
   socket.on('config-update', (cfg) => {
@@ -571,6 +588,18 @@
     document.getElementById('cfg-maxChars').textContent = cfg.maxChars === 0 ? 'Sin límite' : cfg.maxChars + ' ch.';
     document.getElementById('cfg-ttsRate').textContent  = parseFloat(cfg.ttsRate).toFixed(1) + '×';
     document.getElementById('cfg-ttsPitch').textContent = parseFloat(cfg.ttsPitch).toFixed(1);
+
+    // Indicador visual de silencio
+    const muteBar = document.getElementById('mute-bar');
+    if (cfg.botMuted) {
+      muteBar.style.display = 'flex';
+      // Cancelar TTS en curso
+      ttsQueue = [];
+      synth.cancel();
+      isSpeaking = false;
+    } else {
+      muteBar.style.display = 'none';
+    }
   });
 
   // ── TTS ───────────────────────────────────────────────────────────────────
@@ -626,6 +655,7 @@
   }
 
   function speak(original, card, isGift = false) {
+    if (activeConfig.botMuted) return;          // ← bot silenciado por admin
     const clean = stripEmojis(original);
     if (!clean) return;                          // si solo había emojis, no hay nada que leer
     const { texto, truncated } = isGift ? { texto: clean, truncated: false } : applyLimits(clean);
