@@ -350,6 +350,30 @@
   @keyframes muteBarIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
   .mute-bar svg { flex-shrink: 0; }
 
+  /* ── Overlay de pausa ─────────────────────────────────────────── */
+  #pause-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: #000;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 1.2rem;
+    animation: pauseFadeIn .4s ease;
+  }
+  #pause-overlay.visible { display: flex; }
+  @keyframes pauseFadeIn { from{opacity:0} to{opacity:1} }
+  #pause-overlay .pause-icon {
+    opacity: .18; margin-bottom: .5rem;
+  }
+  #pause-overlay .pause-msg {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.1rem; color: rgba(255,255,255,.55);
+    letter-spacing: .06em; text-align: center;
+    max-width: 480px; line-height: 1.6;
+    padding: 0 2rem;
+  }
+  #pause-overlay .pause-msg:empty { display: none; }
+
   @media (max-width:720px) {
     main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
     aside { border-right: none; border-bottom: 1px solid var(--border); }
@@ -374,6 +398,16 @@
 <div class="mute-bar" id="mute-bar">
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
   BOT SILENCIADO POR EL ADMIN — El TTS está desactivado
+</div>
+
+<!-- Overlay de pausa (controlado por el admin) -->
+<div id="pause-overlay">
+  <div class="pause-icon">
+    <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+    </svg>
+  </div>
+  <div class="pause-msg" id="pause-msg"></div>
 </div>
 
 <main>
@@ -599,6 +633,20 @@
       isSpeaking = false;
     } else {
       muteBar.style.display = 'none';
+    }
+
+    // Overlay de pausa
+    const overlay = document.getElementById('pause-overlay');
+    const pauseMsg = document.getElementById('pause-msg');
+    if (cfg.pagePaused) {
+      pauseMsg.textContent = cfg.pauseMsg || '';
+      overlay.classList.add('visible');
+      // Pausar TTS mientras la página esté pausada
+      ttsQueue = [];
+      synth.cancel();
+      isSpeaking = false;
+    } else {
+      overlay.classList.remove('visible');
     }
   });
 
