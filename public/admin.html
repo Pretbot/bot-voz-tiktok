@@ -764,6 +764,36 @@
     </div>
   </div>
 
+  <!-- Panel Pausar Página -->
+  <div class="mute-panel" id="pause-panel" style="flex-direction:column;gap:1rem;align-items:stretch;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+      <div class="mute-info">
+        <div class="card-icon" id="pause-icon-wrap" style="background:rgba(105,201,208,.12);color:var(--accent2);">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        </div>
+        <div class="mute-status-text">
+          <div class="card-title">Pausar página</div>
+          <div class="card-desc" id="pause-desc">Muestra pantalla negra a todos los viewers</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <span class="mute-badge on" id="pause-badge" style="background:rgba(105,201,208,.12);color:var(--accent2);border-color:rgba(105,201,208,.3);">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="pause-badge-text">VISIBLE</span>
+        </span>
+        <button class="btn-mute-toggle active" id="btn-pause-toggle" style="background:rgba(105,201,208,.12);color:var(--accent2);border-color:rgba(105,201,208,.3);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          <span id="pause-btn-text">Pausar página</span>
+        </button>
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;align-items:center;">
+      <input type="text" id="pause-msg-input" maxlength="200"
+        placeholder="Mensaje opcional (ej: Volvemos en un momento...)"
+        style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.45rem .8rem;color:var(--text);font-size:.82rem;outline:none;font-family:inherit;" />
+    </div>
+  </div>
+
   <!-- Panel de sonidos -->
   <div class="sound-panel">
     <div class="card-header">
@@ -932,9 +962,45 @@
     socket.emit('admin-toggle-mute');
   });
 
+  // ── Control de pausa de página ────────────────────────────────────────────
+  function updatePauseUI(pagePaused) {
+    const btn      = document.getElementById('btn-pause-toggle');
+    const btnTxt   = document.getElementById('pause-btn-text');
+    const badge    = document.getElementById('pause-badge');
+    const badgeTxt = document.getElementById('pause-badge-text');
+    const desc     = document.getElementById('pause-desc');
+    if (pagePaused) {
+      btn.style.background    = 'rgba(254,44,85,.15)';
+      btn.style.color         = 'var(--accent)';
+      btn.style.borderColor   = 'rgba(254,44,85,.4)';
+      btnTxt.textContent      = 'Reanudar página';
+      badge.style.background  = 'rgba(254,44,85,.15)';
+      badge.style.color       = 'var(--accent)';
+      badge.style.borderColor = 'rgba(254,44,85,.4)';
+      badgeTxt.textContent    = 'PAUSADA';
+      desc.textContent        = '⏸ Pantalla negra activa para todos los viewers';
+    } else {
+      btn.style.background    = 'rgba(105,201,208,.12)';
+      btn.style.color         = 'var(--accent2)';
+      btn.style.borderColor   = 'rgba(105,201,208,.3)';
+      btnTxt.textContent      = 'Pausar página';
+      badge.style.background  = 'rgba(105,201,208,.12)';
+      badge.style.color       = 'var(--accent2)';
+      badge.style.borderColor = 'rgba(105,201,208,.3)';
+      badgeTxt.textContent    = 'VISIBLE';
+      desc.textContent        = 'Muestra pantalla negra a todos los viewers';
+    }
+  }
+
+  document.getElementById('btn-pause-toggle').addEventListener('click', () => {
+    const mensaje = document.getElementById('pause-msg-input').value;
+    socket.emit('admin-toggle-pause', { mensaje });
+  });
+
   // Actualizar UI de mute cuando llega config-update
   socket.on('config-update', (cfg) => {
-    if (typeof cfg.botMuted !== 'undefined') updateMuteUI(cfg.botMuted);
+    if (typeof cfg.botMuted    !== 'undefined') updateMuteUI(cfg.botMuted);
+    if (typeof cfg.pagePaused  !== 'undefined') updatePauseUI(cfg.pagePaused);
     // (la config de sliders se aplica en applyConfigToUI si el admin está logueado)
   });
 
