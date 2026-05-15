@@ -44,12 +44,14 @@ function resolveNombre(username) {
 
 // ─── Configuracion global ─────────────────────────────────────────────────────
 let globalConfig = {
-    maxQueue:  50,
-    maxWords:  0,
-    maxChars:  0,
-    ttsRate:   1.1,
-    ttsPitch:  1.0,
-    botMuted:  false,
+    maxQueue:   50,
+    maxWords:   0,
+    maxChars:   0,
+    ttsRate:    1.1,
+    ttsPitch:   1.0,
+    botMuted:   false,
+    pagePaused: false,
+    pauseMsg:   '',
 };
 
 // ─── App Setup ────────────────────────────────────────────────────────────────
@@ -276,6 +278,15 @@ io.on('connection', (socket) => {
         const texto = mensaje.trim().slice(0, 300);
         io.emit('admin-mensaje', { texto });
         log.ok(`Admin TTS: ${texto.slice(0, 60)}`);
+    });
+
+    // ─── Pausar/reanudar página (solo admin) ─────────────────────────────────
+    socket.on('admin-toggle-pause', ({ mensaje }) => {
+        if (!isAdmin) return;
+        globalConfig.pagePaused = !globalConfig.pagePaused;
+        globalConfig.pauseMsg   = (typeof mensaje === 'string') ? mensaje.trim().slice(0, 200) : '';
+        log.ok(`Página ${globalConfig.pagePaused ? 'PAUSADA' : 'REANUDADA'} — msg: "${globalConfig.pauseMsg}"`);
+        io.emit('config-update', globalConfig);
     });
 
     // ─── Silenciar/activar bot (solo admin) ──────────────────────────────────
