@@ -59,7 +59,7 @@ function startAnuncios() {
             frase = frases[anuncioIndex % frases.length];
             anuncioIndex++;
         }
-        log.ok(\`Anuncio automático: \${frase.slice(0, 60)}\`);
+        log.ok(`Anuncio automático: ${frase.slice(0, 60)}`);
         io.emit('admin-mensaje', { texto: frase, esAnuncio: true });
     }, ms);
     log.ok(\`Anuncios cada \${cfg.intervalo} min, modo: \${cfg.orden}\`);
