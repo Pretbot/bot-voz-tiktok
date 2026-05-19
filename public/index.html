@@ -327,6 +327,34 @@
     border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; margin-left: .4rem;
     vertical-align: middle;
   }
+  .vip-badge {
+    display: inline-flex; align-items: center; gap: .2rem;
+    font-family: 'Space Mono', monospace; font-size: .58rem;
+    color: var(--gold); border: 1px solid rgba(245,200,66,.4);
+    border-radius: 4px; padding: 1px 5px; margin-left: .4rem; vertical-align: middle;
+  }
+  .notts-badge {
+    display: inline-flex; align-items: center; gap: .2rem;
+    font-family: 'Space Mono', monospace; font-size: .58rem;
+    color: var(--muted); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 5px; margin-left: .4rem; vertical-align: middle;
+    opacity: .6;
+  }
+  .comment-card.sin-tts { opacity: .55; }
+  .comment-card.es-vip  { border-left: 2px solid var(--gold); }
+  .anuncio-card {
+    display: flex; align-items: flex-start; gap: .75rem;
+    padding: .85rem 1rem; border-radius: 10px; margin-bottom: .5rem;
+    background: rgba(245,200,66,.07); border: 1px solid rgba(245,200,66,.25);
+    animation: cardIn .25s ease;
+  }
+  .anuncio-icon {
+    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+    background: rgba(245,200,66,.15); display: flex; align-items: center; justify-content: center;
+    color: var(--gold);
+  }
+  .anuncio-label { font-family: 'Space Mono', monospace; font-size: .6rem; color: var(--gold); margin-bottom: .25rem; letter-spacing: .08em; }
+  .anuncio-text  { font-size: .86rem; line-height: 1.5; }
 
   .audio-indicator { display: flex; align-items: center; gap: 3px; margin-top: .35rem; }
   .audio-indicator span {
@@ -402,6 +430,11 @@
 
 <!-- Overlay de pausa (controlado por el admin) -->
 <div id="pause-overlay">
+  <div class="pause-icon">
+    <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+    </svg>
+  </div>
   <div class="pause-msg" id="pause-msg"></div>
 </div>
 
@@ -607,7 +640,7 @@
   let totalFollows  = 0;
   let totalLikes    = 0;
   let totalShares   = 0;
-  let activeConfig  = { maxQueue:50, maxWords:0, maxChars:0, ttsRate:1.1, ttsPitch:1.0, botMuted:false };
+  let activeConfig  = { maxQueue:50, maxWords:0, maxChars:0, ttsRate:1.1, ttsPitch:1.0, botMuted:false, requireGift:false, vipList:[], keywords:[], anuncios:{ activo:false, intervalo:5, orden:'secuencial', frases:[] } };
 
   // Config del admin
   socket.on('config-update', (cfg) => {
@@ -776,31 +809,37 @@
   }
 
   // ── Nuevo comentario ──────────────────────────────────────────────────────
-  socket.on('nuevo-comentario', ({ usuario, usuarioOriginal, mensaje }) => {
+  socket.on('nuevo-comentario', ({ usuario, usuarioOriginal, mensaje, sinTTS, esVIP }) => {
     totalComments++;
     document.getElementById('stat-total').textContent = totalComments;
     if (emptyState) emptyState.style.display = 'none';
 
     const card = document.createElement('div');
-    card.className = 'comment-card';
+    card.className = 'comment-card' + (sinTTS ? ' sin-tts' : '') + (esVIP ? ' es-vip' : '');
     const time = new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
     const tieneApodo = usuarioOriginal && usuarioOriginal !== usuario;
     const badgeOriginal = tieneApodo
       ? `<span class="truncated-badge" title="Username TikTok">@${esc(usuarioOriginal)}</span>`
+      : '';
+    const badgeVIP = esVIP
+      ? `<span class="vip-badge">⭐ VIP</span>`
+      : '';
+    const badgeSinTTS = sinTTS
+      ? `<span class="notts-badge">🔇 sin TTS</span>`
       : '';
     card.innerHTML = `
       <div class="avatar">${esc(usuario).slice(0,2).toUpperCase()}</div>
       <div class="comment-body">
         <div class="comment-meta">
           <span class="comment-user">${esc(usuario)}</span>
-          ${badgeOriginal}
+          ${badgeOriginal}${badgeVIP}${badgeSinTTS}
           <span class="comment-time">${time}</span>
         </div>
         <p class="comment-text">${esc(mensaje)}</p>
       </div>`;
     container.appendChild(card);
     if (scrollToggle.checked) container.scrollTop = 0;
-    if (audioToggle.checked)  speak(mensaje, card, false);
+    if (audioToggle.checked && !sinTTS) speak(mensaje, card, false);
   });
 
   // ── Nuevo regalo ──────────────────────────────────────────────────────────
@@ -1153,22 +1192,37 @@
     if (shareToggle.checked) speak(`gracias ${usuario} por compartir el live`, card, true);
   });
 
-  // ── Mensaje admin ─────────────────────────────────────────────────────────
-  socket.on('admin-mensaje', ({ texto }) => {
+  // ── Mensaje admin / keyword / anuncio ────────────────────────────────────
+  socket.on('admin-mensaje', ({ texto, esAnuncio, esKeyword }) => {
     if (emptyState) emptyState.style.display = 'none';
     const card = document.createElement('div');
-    card.className = 'admin-card';
-    card.innerHTML = `
-      <div class="admin-icon">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-      </div>
-      <div class="admin-body">
-        <div class="admin-label">★ mensaje del streamer</div>
-        <div class="admin-text">${esc(texto)}</div>
-      </div>`;
+
+    if (esAnuncio) {
+      card.className = 'anuncio-card';
+      card.innerHTML = `
+        <div class="anuncio-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div>
+          <div class="anuncio-label">📢 anuncio automático</div>
+          <div class="anuncio-text">${esc(texto)}</div>
+        </div>`;
+    } else {
+      card.className = 'admin-card';
+      const label = esKeyword ? '🤖 respuesta automática' : '★ mensaje del streamer';
+      card.innerHTML = `
+        <div class="admin-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div class="admin-body">
+          <div class="admin-label">${label}</div>
+          <div class="admin-text">${esc(texto)}</div>
+        </div>`;
+    }
+
     container.appendChild(card);
     if (scrollToggle.checked) container.scrollTop = 0;
-    // TTS prioritario: se inserta al frente de la cola
+    // TTS prioritario
     const clean = stripEmojis(texto);
     if (clean) {
       ttsQueue.unshift({ texto: clean, truncated: false, card, isGift: true });
