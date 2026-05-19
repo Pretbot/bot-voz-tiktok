@@ -137,9 +137,10 @@ function enqueue(username, usuario, mensaje) {
             if (!kw.palabra || !kw.respuesta) continue;
             if (msLow.includes(kw.palabra.toLowerCase())) {
                 setTimeout(() => {
-                    log.ok(`Keyword match: "${kw.palabra}" → "${kw.respuesta}"`);
-                    io.to(username).emit('admin-mensaje', { texto: kw.respuesta, esKeyword: true });
-                }, 800);
+    log.ok(`Keyword match: "${kw.palabra}" → "${kw.respuesta}"`);
+    const respuestaFinal = kw.respuesta.replace('{usuario}', apodo);
+    io.to(username).emit('admin-mensaje', { texto: respuestaFinal, esKeyword: true });
+}, 800);
                 break; // solo primera coincidencia
             }
         }
