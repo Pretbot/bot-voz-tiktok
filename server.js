@@ -36,6 +36,35 @@ function saveApodos(apodos) {
 
 let apodos = loadApodos();
 
+// ─── Estado de donadores ──────────────────────────────────────────────────────
+// username (lowercase) → timestamp del último regalo recibido
+const donadores = new Map();
+
+// ─── Anuncios programados ─────────────────────────────────────────────────────
+let anuncioIndex    = 0;
+let anuncioInterval = null;
+
+function startAnuncios() {
+    if (anuncioInterval) clearInterval(anuncioInterval);
+    const cfg = globalConfig.anuncios;
+    if (!cfg.activo || !cfg.frases.length) return;
+    const ms = (cfg.intervalo || 5) * 60 * 1000;
+    anuncioInterval = setInterval(() => {
+        const frases = globalConfig.anuncios.frases;
+        if (!frases.length) return;
+        let frase;
+        if (globalConfig.anuncios.orden === 'aleatorio') {
+            frase = frases[Math.floor(Math.random() * frases.length)];
+        } else {
+            frase = frases[anuncioIndex % frases.length];
+            anuncioIndex++;
+        }
+        log.ok(\`Anuncio automático: \${frase.slice(0, 60)}\`);
+        io.emit('admin-mensaje', { texto: frase, esAnuncio: true });
+    }, ms);
+    log.ok(\`Anuncios cada \${cfg.intervalo} min, modo: \${cfg.orden}\`);
+}
+
 // Devuelve el apodo si existe, o el username original
 function resolveNombre(username) {
     const key = username.toLowerCase().trim();
@@ -52,6 +81,10 @@ let globalConfig = {
     botMuted:   false,
     pagePaused: false,
     pauseMsg:   '',
+    requireGift: false,
+    vipList:    [],
+    keywords:   [],
+    anuncios:   { activo: false, intervalo: 5, orden: 'secuencial', frases: [] },
 };
 
 // ─── App Setup ────────────────────────────────────────────────────────────────
@@ -79,10 +112,38 @@ function enqueue(username, usuario, mensaje) {
         log.warn(`[${username}] Cola llena (${globalConfig.maxQueue}), descartando: ${usuario}`);
         return;
     }
-    const apodo = resolveNombre(usuario);
+    const apodo    = resolveNombre(usuario);
+    const userKey  = (usuario || '').toLowerCase().trim();
+    const esVIP    = globalConfig.vipList.map(v => v.toLowerCase().trim()).includes(userKey);
+    const dono     = donadores.has(userKey);
+
+    // ── Filtro de donación ───────────────────────────────────────────────────
+    // Si requireGift está activo, solo leen VIP o quienes hayan donado
+    if (globalConfig.requireGift && !esVIP && !dono) {
+        log.info(`[${username}] Ignorado (sin regalo): ${usuario}`);
+        // Igual emitimos el comentario para que se vea en el feed, pero sin TTS
+        io.to(username).emit('nuevo-comentario', { usuario: apodo, usuarioOriginal: usuario, mensaje, sinTTS: true });
+        return;
+    }
+
     room.queue.push({ usuario: apodo, usuarioOriginal: usuario, mensaje });
-    io.to(username).emit('nuevo-comentario', { usuario: apodo, usuarioOriginal: usuario, mensaje });
+    io.to(username).emit('nuevo-comentario', { usuario: apodo, usuarioOriginal: usuario, mensaje, esVIP });
     log.ok(`[${username}] ${apodo} (${usuario}): ${mensaje.slice(0, 50)}`);
+
+    // ── Respuestas automáticas a keywords ────────────────────────────────────
+    if (globalConfig.keywords.length) {
+        const msLow = mensaje.toLowerCase();
+        for (const kw of globalConfig.keywords) {
+            if (!kw.palabra || !kw.respuesta) continue;
+            if (msLow.includes(kw.palabra.toLowerCase())) {
+                setTimeout(() => {
+                    log.ok(`Keyword match: "${kw.palabra}" → "${kw.respuesta}"`);
+                    io.to(username).emit('admin-mensaje', { texto: kw.respuesta, esKeyword: true });
+                }, 800);
+                break; // solo primera coincidencia
+            }
+        }
+    }
 }
 
 // ─── Enqueue regalo ───────────────────────────────────────────────────────────
@@ -336,6 +397,42 @@ io.on('connection', (socket) => {
         if (!payload || typeof payload !== 'object') return;
         log.ok(`Admin música → ${payload.action} "${payload.title || payload.url || ''}"`);
         io.emit('music-command', payload);
+    });
+
+    // ─── Admin: guardar config de anuncios ───────────────────────────────────
+    socket.on('admin-set-anuncios', (cfg) => {
+        if (!isAdmin) return;
+        if (typeof cfg.activo    === 'boolean') globalConfig.anuncios.activo    = cfg.activo;
+        if (typeof cfg.intervalo === 'number')  globalConfig.anuncios.intervalo = Math.max(1, Math.min(120, cfg.intervalo));
+        if (typeof cfg.orden     === 'string')  globalConfig.anuncios.orden     = cfg.orden;
+        if (Array.isArray(cfg.frases))          globalConfig.anuncios.frases    = cfg.frases.slice(0, 50).map(f => String(f).slice(0, 300));
+        anuncioIndex = 0;
+        startAnuncios();
+        log.ok('Config anuncios actualizada:', JSON.stringify(globalConfig.anuncios));
+        io.emit('config-update', globalConfig);
+    });
+
+    // ─── Admin: guardar keywords ──────────────────────────────────────────────
+    socket.on('admin-set-keywords', (kws) => {
+        if (!isAdmin) return;
+        if (!Array.isArray(kws)) return;
+        globalConfig.keywords = kws.slice(0, 30).map(k => ({
+            palabra:   String(k.palabra  || '').slice(0, 50).toLowerCase().trim(),
+            respuesta: String(k.respuesta || '').slice(0, 200).trim(),
+        })).filter(k => k.palabra && k.respuesta);
+        log.ok('Keywords actualizadas:', globalConfig.keywords.length);
+        io.emit('config-update', globalConfig);
+    });
+
+    // ─── Admin: config VIP y requireGift ─────────────────────────────────────
+    socket.on('admin-set-filtro', (data) => {
+        if (!isAdmin) return;
+        if (typeof data.requireGift === 'boolean') globalConfig.requireGift = data.requireGift;
+        if (Array.isArray(data.vipList)) {
+            globalConfig.vipList = data.vipList.slice(0, 100).map(v => String(v).replace(/^@/,'').trim().toLowerCase()).filter(Boolean);
+        }
+        log.ok('Filtro regalo:', globalConfig.requireGift, 'VIPs:', globalConfig.vipList.length);
+        io.emit('config-update', globalConfig);
     });
 
     socket.on('disconnect', () => {
