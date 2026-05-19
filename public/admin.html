@@ -740,6 +740,110 @@
     </div>
   </div>
 
+  <!-- Panel Keywords (respuestas automáticas) -->
+  <div class="apodos-panel" id="keywords-panel">
+    <div class="card-header">
+      <div class="card-icon" style="background:rgba(180,100,255,.12);color:#b464ff;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/></svg>
+      </div>
+      <div>
+        <div class="card-title">Respuestas automáticas</div>
+        <div class="card-desc">Si alguien escribe la palabra clave, el bot responde en voz alta</div>
+      </div>
+    </div>
+    <div class="apodos-form">
+      <input type="text" class="apodos-input" id="kw-palabra" placeholder="Palabra clave (ej: precio)" autocomplete="off" maxlength="50" />
+      <input type="text" class="apodos-input" id="kw-respuesta" placeholder="Respuesta del bot (ej: Escríbenos al privado)" autocomplete="off" maxlength="200" />
+      <button class="btn-apodo-add" id="btn-kw-add" style="background:linear-gradient(135deg,#b464ff,#8b2fff);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+        Agregar keyword
+      </button>
+    </div>
+    <div class="apodos-list" id="kw-list">
+      <div class="apodos-empty">No hay keywords. Ejemplos: "hola" → "¡Hola! Bienvenido al live"</div>
+    </div>
+  </div>
+
+  <!-- Panel Filtro de donación + VIP -->
+  <div class="apodos-panel" id="filtro-panel">
+    <div class="card-header">
+      <div class="card-icon" style="background:rgba(245,200,66,.12);color:var(--gold);">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+      </div>
+      <div>
+        <div class="card-title">Filtro de donación</div>
+        <div class="card-desc">Solo leen quienes hayan donado al menos 1 regalo (o estén en VIP)</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;">
+      <span style="font-size:.85rem;">Activar filtro de regalo</span>
+      <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;">
+        <input type="checkbox" id="require-gift-toggle" style="width:18px;height:18px;accent-color:var(--gold);cursor:pointer;" />
+        <span id="require-gift-label" style="font-family:'Space Mono',monospace;font-size:.72rem;color:var(--muted);">DESACTIVADO</span>
+      </label>
+    </div>
+    <div class="card-desc" style="margin-bottom:.75rem;">Lista VIP — siempre leen sin importar donación:</div>
+    <div class="apodos-form">
+      <input type="text" class="apodos-input" id="vip-username" placeholder="usuario_tiktok (sin @)" autocomplete="off" />
+      <button class="btn-apodo-add" id="btn-vip-add" style="background:linear-gradient(135deg,var(--gold),#d4a017);color:#000;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+        Agregar VIP
+      </button>
+    </div>
+    <div class="apodos-list" id="vip-list">
+      <div class="apodos-empty">No hay usuarios VIP</div>
+    </div>
+  </div>
+
+  <!-- Panel Anuncios automáticos -->
+  <div class="apodos-panel" id="anuncios-panel">
+    <div class="card-header">
+      <div class="card-icon" style="background:rgba(254,44,85,.1);color:var(--accent);">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <div>
+        <div class="card-title">Anuncios automáticos</div>
+        <div class="card-desc">El bot leerá estas frases cada cierto tiempo durante el live</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem 0 .6rem;">
+      <span style="font-size:.85rem;">Activar anuncios</span>
+      <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;">
+        <input type="checkbox" id="anuncio-activo" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;" />
+        <span id="anuncio-activo-label" style="font-family:'Space Mono',monospace;font-size:.72rem;color:var(--muted);">DESACTIVADO</span>
+      </label>
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:.75rem;">
+      <div style="display:flex;align-items:center;gap:.4rem;flex:1;min-width:140px;">
+        <label style="font-size:.78rem;color:var(--muted);white-space:nowrap;">Cada</label>
+        <input type="number" id="anuncio-intervalo" min="1" max="120" value="5"
+          style="width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.35rem .5rem;color:var(--text);font-size:.82rem;outline:none;text-align:center;" />
+        <label style="font-size:.78rem;color:var(--muted);white-space:nowrap;">minutos</label>
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem;">
+        <label style="font-size:.78rem;color:var(--muted);">Orden:</label>
+        <select id="anuncio-orden" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.35rem .5rem;color:var(--text);font-size:.78rem;outline:none;">
+          <option value="secuencial">Secuencial</option>
+          <option value="aleatorio">Aleatorio</option>
+        </select>
+      </div>
+    </div>
+    <div class="apodos-form">
+      <input type="text" class="apodos-input" id="anuncio-frase" placeholder='Ej: Compra nuestros productos en ejemplo.com' autocomplete="off" maxlength="300" style="flex:1;" />
+      <button class="btn-apodo-add" id="btn-anuncio-add" style="background:linear-gradient(135deg,var(--accent),#c0203f);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+        Agregar frase
+      </button>
+    </div>
+    <div class="apodos-list" id="anuncios-list">
+      <div class="apodos-empty">No hay frases. Agrega al menos una para activar los anuncios.</div>
+    </div>
+    <button class="btn-apodo-add" id="btn-anuncio-save" style="width:100%;margin-top:.5rem;background:linear-gradient(135deg,var(--accent),#c0203f);">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Guardar y aplicar anuncios
+    </button>
+  </div>
+
   <!-- Panel Silenciar Bot -->
   <div class="mute-panel" id="mute-panel">
     <div class="mute-info">
@@ -995,13 +1099,6 @@
   document.getElementById('btn-pause-toggle').addEventListener('click', () => {
     const mensaje = document.getElementById('pause-msg-input').value;
     socket.emit('admin-toggle-pause', { mensaje });
-  });
-
-  // Actualizar UI de mute cuando llega config-update
-  socket.on('config-update', (cfg) => {
-    if (typeof cfg.botMuted    !== 'undefined') updateMuteUI(cfg.botMuted);
-    if (typeof cfg.pagePaused  !== 'undefined') updatePauseUI(cfg.pagePaused);
-    // (la config de sliders se aplica en applyConfigToUI si el admin está logueado)
   });
 
   // ── Botones de sonido ─────────────────────────────────────────────────────
@@ -1287,6 +1384,154 @@
     document.getElementById(id).addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('btn-apodo-add').click();
     });
+  });
+
+  // ── Keywords ────────────────────────────────────────────────────────────────
+  let keywords = [];
+
+  function renderKeywords() {
+    const list = document.getElementById('kw-list');
+    if (!keywords.length) {
+      list.innerHTML = '<div class="apodos-empty">No hay keywords. Ejemplos: "hola" → "¡Hola! Bienvenido al live"</div>';
+      return;
+    }
+    list.innerHTML = keywords.map((kw, i) => `
+      <div class="apodo-row">
+        <span class="apodo-username">${esc(kw.palabra)}</span>
+        <span class="apodo-arrow">→</span>
+        <span class="apodo-nombre" style="flex:1;">${esc(kw.respuesta)}</span>
+        <button class="btn-apodo-del" data-i="${i}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
+      </div>`).join('');
+    list.querySelectorAll('.btn-apodo-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        keywords.splice(parseInt(btn.dataset.i), 1);
+        renderKeywords();
+        socket.emit('admin-set-keywords', keywords);
+      });
+    });
+  }
+
+  document.getElementById('btn-kw-add').addEventListener('click', () => {
+    const palabra   = document.getElementById('kw-palabra').value.trim().toLowerCase();
+    const respuesta = document.getElementById('kw-respuesta').value.trim();
+    if (!palabra)   { showToast('Ingresa la palabra clave'); return; }
+    if (!respuesta) { showToast('Ingresa la respuesta'); return; }
+    keywords.push({ palabra, respuesta });
+    document.getElementById('kw-palabra').value   = '';
+    document.getElementById('kw-respuesta').value = '';
+    renderKeywords();
+    socket.emit('admin-set-keywords', keywords);
+    showToast(`Keyword guardada: "${palabra}"`);
+  });
+
+  // ── Filtro regalo + VIP ─────────────────────────────────────────────────────
+  let vipList = [];
+
+  function renderVIP() {
+    const list = document.getElementById('vip-list');
+    if (!vipList.length) {
+      list.innerHTML = '<div class="apodos-empty">No hay usuarios VIP</div>';
+      return;
+    }
+    list.innerHTML = vipList.map((u, i) => `
+      <div class="apodo-row">
+        <span class="vip-badge" style="margin-left:0;">⭐ VIP</span>
+        <span class="apodo-nombre" style="flex:1;margin-left:.5rem;">@${esc(u)}</span>
+        <button class="btn-apodo-del" data-i="${i}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
+      </div>`).join('');
+    list.querySelectorAll('.btn-apodo-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        vipList.splice(parseInt(btn.dataset.i), 1);
+        renderVIP();
+        socket.emit('admin-set-filtro', { vipList });
+      });
+    });
+  }
+
+  document.getElementById('require-gift-toggle').addEventListener('change', function() {
+    const activo = this.checked;
+    document.getElementById('require-gift-label').textContent = activo ? 'ACTIVADO' : 'DESACTIVADO';
+    socket.emit('admin-set-filtro', { requireGift: activo, vipList });
+    showToast(activo ? '🎁 Filtro regalo ACTIVADO' : '🎁 Filtro regalo desactivado');
+  });
+
+  document.getElementById('btn-vip-add').addEventListener('click', () => {
+    const u = document.getElementById('vip-username').value.trim().replace(/^@/, '').toLowerCase();
+    if (!u) { showToast('Ingresa el username'); return; }
+    if (vipList.includes(u)) { showToast('Ya está en la lista VIP'); return; }
+    vipList.push(u);
+    document.getElementById('vip-username').value = '';
+    renderVIP();
+    socket.emit('admin-set-filtro', { requireGift: document.getElementById('require-gift-toggle').checked, vipList });
+    showToast(`⭐ @${u} agregado a VIP`);
+  });
+
+  // ── Anuncios automáticos ─────────────────────────────────────────────────────
+  let anuncioFrases = [];
+
+  function renderAnuncios() {
+    const list = document.getElementById('anuncios-list');
+    if (!anuncioFrases.length) {
+      list.innerHTML = '<div class="apodos-empty">No hay frases. Agrega al menos una para activar los anuncios.</div>';
+      return;
+    }
+    list.innerHTML = anuncioFrases.map((f, i) => `
+      <div class="apodo-row">
+        <span class="anuncio-label" style="margin:0;white-space:nowrap;">${i+1}.</span>
+        <span class="apodo-nombre" style="flex:1;margin-left:.5rem;">${esc(f)}</span>
+        <button class="btn-apodo-del" data-i="${i}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
+      </div>`).join('');
+    list.querySelectorAll('.btn-apodo-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        anuncioFrases.splice(parseInt(btn.dataset.i), 1);
+        renderAnuncios();
+      });
+    });
+  }
+
+  document.getElementById('btn-anuncio-add').addEventListener('click', () => {
+    const frase = document.getElementById('anuncio-frase').value.trim();
+    if (!frase) { showToast('Ingresa una frase'); return; }
+    anuncioFrases.push(frase);
+    document.getElementById('anuncio-frase').value = '';
+    renderAnuncios();
+  });
+
+  document.getElementById('anuncio-activo').addEventListener('change', function() {
+    document.getElementById('anuncio-activo-label').textContent = this.checked ? 'ACTIVADO' : 'DESACTIVADO';
+  });
+
+  document.getElementById('btn-anuncio-save').addEventListener('click', () => {
+    const activo    = document.getElementById('anuncio-activo').checked;
+    const intervalo = parseInt(document.getElementById('anuncio-intervalo').value) || 5;
+    const orden     = document.getElementById('anuncio-orden').value;
+    socket.emit('admin-set-anuncios', { activo, intervalo, orden, frases: anuncioFrases });
+    showToast(activo ? `📢 Anuncios cada ${intervalo} min (${orden})` : '📢 Anuncios desactivados');
+  });
+
+  // Sincronizar estado cuando admin se conecta
+  socket.on('config-update', (cfg) => {
+    if (typeof cfg.botMuted   !== 'undefined') updateMuteUI(cfg.botMuted);
+    if (typeof cfg.pagePaused !== 'undefined') updatePauseUI(cfg.pagePaused);
+    if (cfg.keywords && !keywords.length) { keywords = cfg.keywords; renderKeywords(); }
+    if (cfg.vipList  && !vipList.length)  { vipList  = cfg.vipList;  renderVIP(); }
+    if (cfg.anuncios) {
+      if (!anuncioFrases.length && cfg.anuncios.frases) { anuncioFrases = cfg.anuncios.frases; renderAnuncios(); }
+      document.getElementById('anuncio-activo').checked       = cfg.anuncios.activo;
+      document.getElementById('anuncio-activo-label').textContent = cfg.anuncios.activo ? 'ACTIVADO' : 'DESACTIVADO';
+      document.getElementById('anuncio-intervalo').value      = cfg.anuncios.intervalo || 5;
+      document.getElementById('anuncio-orden').value          = cfg.anuncios.orden || 'secuencial';
+    }
+    if (typeof cfg.requireGift !== 'undefined') {
+      document.getElementById('require-gift-toggle').checked    = cfg.requireGift;
+      document.getElementById('require-gift-label').textContent = cfg.requireGift ? 'ACTIVADO' : 'DESACTIVADO';
+    }
   });
 
   function esc(s) {
