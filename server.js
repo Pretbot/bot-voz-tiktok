@@ -114,8 +114,9 @@ function enqueue(username, usuario, mensaje) {
     }
     const apodo    = resolveNombre(usuario);
     const userKey  = (usuario || '').toLowerCase().trim();
+    const origKey  = (usuario || '').toLowerCase().trim();
     const esVIP    = globalConfig.vipList.map(v => v.toLowerCase().trim()).includes(userKey);
-    const dono     = donadores.has(userKey);
+    const dono     = donadores.has(userKey) || donadores.has(origKey);
 
     // ── Filtro de donación ───────────────────────────────────────────────────
     // Si requireGift está activo, solo leen VIP o quienes hayan donado
@@ -137,10 +138,10 @@ function enqueue(username, usuario, mensaje) {
             if (!kw.palabra || !kw.respuesta) continue;
             if (msLow.includes(kw.palabra.toLowerCase())) {
                 setTimeout(() => {
-    log.ok(`Keyword match: "${kw.palabra}" → "${kw.respuesta}"`);
-    const respuestaFinal = kw.respuesta.replace('{usuario}', apodo);
-    io.to(username).emit('admin-mensaje', { texto: respuestaFinal, esKeyword: true });
-}, 800);
+                    log.ok(`Keyword match: "${kw.palabra}" → "${kw.respuesta}"`);
+                    const respuestaFinal = kw.respuesta.replace('{usuario}', apodo);
+                    io.to(username).emit('admin-mensaje', { texto: respuestaFinal, esKeyword: true });
+                }, 800);
                 break; // solo primera coincidencia
             }
         }
@@ -209,7 +210,11 @@ function connectToLive(username, reconnectCount = 0) {
     // Regalos — solo se procesa cuando el regalo está "completado" (streakFinished)
     // para no repetir el agradecimiento en cada tick del streak
     conn.on('gift', (data) => {
-        const nombre = data.nickname || data.uniqueId || 'alguien';
+        const nombre   = data.nickname || data.uniqueId || 'alguien';
+        const userKey1 = (data.uniqueId || '').toLowerCase().trim();
+        const userKey2 = (data.nickname || '').toLowerCase().trim();
+        if (userKey1) donadores.set(userKey1, Date.now());
+        if (userKey2) donadores.set(userKey2, Date.now());
         // giftType 1 = regalo de streak (se repite), esperamos a que termine
         if (data.giftType === 1 && !data.repeatEnd) return;
         enqueueGift(username, nombre);
