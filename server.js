@@ -191,7 +191,7 @@ function connectToLive(username, reconnectCount = 0) {
     const room = rooms.get(username);
     if (!room) return;
     const conn = new WebcastPushConnection(username, {
-    sessionId: process.env.74e54d3f30ebaea22d95ca1af94cc00c || ''
+    sessionId: process.env.TIKTOK_SESSION_ID || ''
 });
     room.connection = conn;
 
