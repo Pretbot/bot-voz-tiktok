@@ -23,71 +23,44 @@ function loadApodos() {
     try {
         if (fs.existsSync(path_apodos)) {
             const raw = fs.readFileSync(path_apodos, 'utf8');
-            return JSON.parse(raw); // { "usuario_largo_123": "Juanito", ... }
+            return JSON.parse(raw);
         }
-    } catch (e) { log.error('Error cargando apodos:', e.message); }
+    } catch (e) {
+        log.error("Error al cargar apodos.json:", e.message);
+    }
     return {};
 }
 
-function saveApodos(apodos) {
-    try { fs.writeFileSync(path_apodos, JSON.stringify(apodos, null, 2), 'utf8'); }
-    catch (e) { log.error('Error guardando apodos:', e.message); }
+function saveApodos(data) {
+    try {
+        fs.writeFileSync(path_apodos, JSON.stringify(data, null, 2), 'utf8');
+        return true;
+    } catch (e) {
+        log.error("Error al guardar apodos.json:", e.message);
+        return false;
+    }
 }
 
-let apodos = loadApodos();
-
-// ─── Estado de donadores ──────────────────────────────────────────────────────
-// username (lowercase) → timestamp del último regalo recibido
-const donadores = new Map();
-
-// ─── Anuncios programados ─────────────────────────────────────────────────────
-let anuncioIndex    = 0;
-let anuncioInterval = null;
-
-function startAnuncios() {
-    if (anuncioInterval) clearInterval(anuncioInterval);
-    const cfg = globalConfig.anuncios;
-    if (!cfg.activo || !cfg.frases.length) return;
-    const ms = (cfg.intervalo || 5) * 60 * 1000;
-    anuncioInterval = setInterval(() => {
-        const frases = globalConfig.anuncios.frases;
-        if (!frases.length) return;
-        let frase;
-        if (globalConfig.anuncios.orden === 'aleatorio') {
-            frase = frases[Math.floor(Math.random() * frases.length)];
-        } else {
-            frase = frases[anuncioIndex % frases.length];
-            anuncioIndex++;
-        }
-        log.ok('Anuncio automático: ' + frase.slice(0, 60));
-        io.emit('admin-mensaje', { texto: frase, esAnuncio: true });
-    }, ms);
-    log.ok('Anuncios cada ' + cfg.intervalo + ' min, modo: ' + cfg.orden);
-}
-
-// Devuelve el apodo si existe, o el username original
-function resolveNombre(username) {
-    const key = username.toLowerCase().trim();
-    return apodos[key] || username;
-}
-
-// ─── Configuracion global ─────────────────────────────────────────────────────
+// ─── Configuración Global en Memoria ──────────────────────────────────────────
 let globalConfig = {
-    maxQueue:   50,
-    maxWords:   0,
-    maxChars:   0,
-    ttsRate:    1.1,
-    ttsPitch:   1.0,
-    botMuted:   false,
-    pagePaused: false,
-    pauseMsg:   '',
     requireGift: false,
-    vipList:    [],
-    keywords:   [],
-    anuncios:   { activo: false, intervalo: 5, orden: 'secuencial', frases: [] },
+    keywords: [
+        { key: "hola", reply: "¡Hola {usuario}! Bienvenido al directo." },
+        { key: "yt",   reply: "Suscríbete a mi canal de Youtube." }
+    ],
+    vipList: ["admin_test"],
+    anuncios: {
+        activo: false,
+        intervalo: 5,
+        orden: "secuencial",
+        frases: [
+            "No olvides darle doble toque a la pantalla para apoyar el directo.",
+            "¡Comparte el directo con tus amigos!"
+        ]
+    }
 };
 
-// ─── App Setup ────────────────────────────────────────────────────────────────
+// ─── Servidor Express & Socket.io ─────────────────────────────────────────────
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -95,361 +68,385 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: '*', methods: ['GET', 'POST'] },
-    transports: ['websocket', 'polling'],
+    cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
-// ─── Rooms ────────────────────────────────────────────────────────────────────
+// Estructura para manejar múltiples salas activas por usuario de TikTok
 const rooms = new Map();
-const RECONNECT_DELAY_MS = 5_000;
-const MAX_RECONNECTS     = 5;
 
-// ─── Enqueue comentario ───────────────────────────────────────────────────────
-function enqueue(username, usuario, mensaje) {
-    const room = rooms.get(username);
-    if (!room) return;
-    if (room.queue.length >= globalConfig.maxQueue) {
-        log.warn(`[${username}] Cola llena (${globalConfig.maxQueue}), descartando: ${usuario}`);
+function getOrCreateRoom(username) {
+    if (!rooms.has(username)) {
+        rooms.set(username, {
+            username,
+            connection: null,
+            sockets: new Set(),
+            queue: [],
+            isProcessingQueue: false,
+            giftStreaks: new Map(),
+            lastInteractions: new Map(),
+            anuncioIndex: 0,
+            anuncioTimer: null,
+            reconnectTimer: null
+        });
+    }
+    return rooms.get(username);
+}
+
+// ─── Lógica de Conexión a TikTok Live ─────────────────────────────────────────
+function connectTikTok(username, adminSocket) {
+    const room = getOrCreateRoom(username);
+
+    if (room.connection) {
+        adminSocket.emit('toast', { type: 'info', message: `Ya hay una conexión en curso para @${username}` });
         return;
     }
-    const apodo    = resolveNombre(usuario);
-    const userKey  = (usuario || '').toLowerCase().trim();
-    const origKey  = (usuario || '').toLowerCase().trim();
-    const esVIP    = globalConfig.vipList.map(v => v.toLowerCase().trim()).includes(userKey);
-    const dono     = donadores.has(userKey) || donadores.has(origKey);
 
-    // ── Filtro de donación ───────────────────────────────────────────────────
-    // Si requireGift está activo, solo leen VIP o quienes hayan donado
-    if (globalConfig.requireGift && !esVIP && !dono) {
-        log.info(`[${username}] Ignorado (sin regalo): ${usuario}`);
-        // Igual emitimos el comentario para que se vea en el feed, pero sin TTS
-        io.to(username).emit('nuevo-comentario', { usuario: apodo, usuarioOriginal: usuario, mensaje, sinTTS: true });
-        return;
-    }
+    log.info(`Intentando conectar a TikTok Live: @${username}`);
+    adminSocket.emit('toast', { type: 'info', message: `Conectando a @${username}...` });
 
-    room.queue.push({ usuario: apodo, usuarioOriginal: usuario, mensaje });
-    io.to(username).emit('nuevo-comentario', { usuario: apodo, usuarioOriginal: usuario, mensaje, esVIP });
-    log.ok(`[${username}] ${apodo} (${usuario}): ${mensaje.slice(0, 50)}`);
-
-    // ── Respuestas automáticas a keywords ────────────────────────────────────
-    if (globalConfig.keywords.length) {
-        const msLow = mensaje.toLowerCase();
-        for (const kw of globalConfig.keywords) {
-            if (!kw.palabra || !kw.respuesta) continue;
-            if (msLow.includes(kw.palabra.toLowerCase())) {
-                setTimeout(() => {
-                    log.ok(`Keyword match: "${kw.palabra}" → "${kw.respuesta}"`);
-                    const respuestaFinal = kw.respuesta.replace('{usuario}', apodo);
-                    io.to(username).emit('admin-mensaje', { texto: respuestaFinal, esKeyword: true });
-                }, 800);
-                break; // solo primera coincidencia
-            }
+    // Opciones de conexión incluyendo la cookie de sesión para evitar bloqueos de IP
+    const connectionOptions = {
+        enableExtendedGiftInfo: true,
+        requestOptions: {
+            timeout: 10000
         }
+    };
+
+    if (process.env.TIKTOK_SESSION_ID) {
+        connectionOptions.sessionId = process.env.TIKTOK_SESSION_ID;
+        log.info("Usando TIKTOK_SESSION_ID provisto por el entorno.");
     }
-}
 
-// ─── Enqueue regalo ───────────────────────────────────────────────────────────
-function enqueueGift(username, usuario) {
-    const room = rooms.get(username);
-    if (!room) return;
-    if (room.queue.length >= globalConfig.maxQueue) return;
-    const apodo = resolveNombre(usuario);
-    io.to(username).emit('nuevo-regalo', { usuario: apodo, usuarioOriginal: usuario });
-    log.ok(`[${username}] REGALO de ${apodo} (${usuario})`);
-}
+    try {
+        room.connection = new WebcastPushConnection(username, connectionOptions);
+    } catch (err) {
+        log.error(`Error al instanciar WebcastPushConnection:`, err.message);
+        adminSocket.emit('status', { connected: false, error: err.message });
+        return;
+    }
 
-// ─── Enqueue seguidor ─────────────────────────────────────────────────────────
-function enqueueFollow(username, usuario) {
-    const room = rooms.get(username);
-    if (!room) return;
-    const apodo = resolveNombre(usuario);
-    io.to(username).emit('nuevo-follow', { usuario: apodo, usuarioOriginal: usuario });
-    log.ok(`[${username}] FOLLOW de ${apodo} (${usuario})`);
-}
-
-// ─── Like ─────────────────────────────────────────────────────────────────────
-const likeThrottle = new Map(); // evita spam: un aviso cada 30s por usuario
-function handleLike(username, usuario, likeCount) {
-    const key = `${username}:${usuario}`;
-    const now = Date.now();
-    if (likeThrottle.has(key) && now - likeThrottle.get(key) < 30_000) return;
-    likeThrottle.set(key, now);
-    const apodo = resolveNombre(usuario);
-    io.to(username).emit('nuevo-like', { usuario: apodo, usuarioOriginal: usuario, likeCount });
-    log.ok(`[${username}] LIKE x${likeCount} de ${apodo} (${usuario})`);
-}
-
-// ─── Share ────────────────────────────────────────────────────────────────────
-function handleShare(username, usuario) {
-    const apodo = resolveNombre(usuario);
-    io.to(username).emit('nuevo-share', { usuario: apodo, usuarioOriginal: usuario });
-    log.ok(`[${username}] SHARE de ${apodo} (${usuario})`);
-}
-
-// ─── Conexion TikTok Live ─────────────────────────────────────────────────────
-function connectToLive(username, reconnectCount = 0) {
-    const room = rooms.get(username);
-    if (!room) return;
-    const conn = new WebcastPushConnection(username, {
-    sessionId: process.env.TIKTOK_SESSION_ID || ''
-});
-    room.connection = conn;
-
-    conn.connect()
+    room.connection.connect()
         .then(state => {
-            log.ok(`Conectado a @${username} (roomId: ${state.roomId})`);
-            io.to(username).emit('status', { type: 'connected', message: `Conectado al Live de @${username}` });
+            log.ok(`¡Conectado exitosamente al Live de @${username}! (RoomID: ${state.roomId})`);
+            room.giftStreaks.clear();
+            room.lastInteractions.clear();
+            
+            io.to(username).emit('status', { connected: true, username, roomId: state.roomId });
+            startAnuncios(room);
         })
         .catch(err => {
-            log.error(`No se pudo conectar a @${username}: ${err.message}`);
-            io.to(username).emit('status', { type: 'error', message: `Error al conectar: ${err.message}` });
-            scheduleReconnect(username, reconnectCount);
+            log.error(`Error al conectar con @${username}:`, err.message);
+            io.to(username).emit('status', { connected: false, error: err.message });
+            room.connection = null;
         });
 
-    // Comentarios de chat
-    conn.on('chat', (data) => enqueue(username, data.nickname, data.comment));
-
-    // Regalos — solo se procesa cuando el regalo está "completado" (streakFinished)
-    // para no repetir el agradecimiento en cada tick del streak
-    conn.on('gift', (data) => {
-        const nombre   = data.nickname || data.uniqueId || 'alguien';
-        const userKey1 = (data.uniqueId || '').toLowerCase().trim();
-        const userKey2 = (data.nickname || '').toLowerCase().trim();
-        if (userKey1) donadores.set(userKey1, Date.now());
-        if (userKey2) donadores.set(userKey2, Date.now());
-        // giftType 1 = regalo de streak (se repite), esperamos a que termine
-        if (data.giftType === 1 && !data.repeatEnd) return;
-        enqueueGift(username, nombre);
-    });
-
-    // Nuevos seguidores — evento dedicado de la librería
-    conn.on('follow', (data) => {
-        const nombre = data.nickname || data.uniqueId || 'alguien';
-        enqueueFollow(username, nombre);
-    });
-
-    // Likes
-    conn.on('like', (data) => {
-        const nombre = data.nickname || data.uniqueId || 'alguien';
-        handleLike(username, nombre, data.likeCount || 1);
-    });
-
-    // Shares (evento 'social' con displayType share)
-    conn.on('social', (data) => {
-        if (data.displayType === 'pm_mt_msg_viewer_share') {
-            const nombre = data.nickname || data.uniqueId || 'alguien';
-            handleShare(username, nombre);
+    // ─── Manejo de Eventos del Live ───────────────────────────────────────────
+    room.connection.on('chat', data => {
+        const apodos = loadApodos();
+        const displayName = apodos[data.uniqueId] || data.nickname || data.uniqueId;
+        const isVIP = globalConfig.vipList.includes(data.uniqueId.toLowerCase());
+        
+        let sinTTS = false;
+        if (globalConfig.requireGift && !isVIP) {
+            sinTTS = true; 
         }
-    });
 
-    conn.on('disconnected', () => {
-        log.warn(`[${username}] Desconectado`);
-        io.to(username).emit('status', { type: 'reconnecting', message: `Reconectando a @${username}...` });
-        scheduleReconnect(username, reconnectCount);
-    });
-
-    conn.on('error', (err) => log.error(`[${username}]: ${err.message}`));
-}
-
-function scheduleReconnect(username, previousCount) {
-    const room = rooms.get(username);
-    if (!room || room.sockets.size === 0) return;
-    if (previousCount >= MAX_RECONNECTS) {
-        io.to(username).emit('status', { type: 'failed', message: `Sin reconexion tras ${MAX_RECONNECTS} intentos` });
-        return;
-    }
-    const delay = RECONNECT_DELAY_MS * (previousCount + 1);
-    room.reconnectTimer = setTimeout(() => {
-        if (rooms.has(username) && rooms.get(username).sockets.size > 0)
-            connectToLive(username, previousCount + 1);
-    }, delay);
-}
-
-// ─── Socket.IO ────────────────────────────────────────────────────────────────
-io.on('connection', (socket) => {
-    log.info(`Socket conectado: ${socket.id}`);
-    let currentRoom = null;
-    let isAdmin = false;
-
-    socket.emit('config-update', globalConfig);
-
-    socket.on('join-live', (username) => {
-        if (!username || typeof username !== 'string') {
-            socket.emit('status', { type: 'error', message: 'Username invalido' });
-            return;
-        }
-        username = username.trim().replace(/^@/, '').toLowerCase();
-        if (currentRoom) leaveRoom(socket, currentRoom);
-        currentRoom = username;
-        socket.join(username);
-
-        if (!rooms.has(username)) {
-            rooms.set(username, { connection: null, sockets: new Set([socket.id]), queue: [], reconnectTimer: null, reconnectCount: 0 });
-            connectToLive(username);
-        } else {
-            rooms.get(username).sockets.add(socket.id);
-            socket.emit('status', { type: 'connected', message: `Unido al Live de @${username}` });
-        }
-    });
-
-    socket.on('leave-live', () => {
-        if (currentRoom) { leaveRoom(socket, currentRoom); currentRoom = null; }
-    });
-
-    socket.on('admin-login', (password) => {
-        if (password === ADMIN_PASSWORD) {
-            isAdmin = true;
-            socket.join('admins');
-            socket.emit('admin-auth', { ok: true, config: globalConfig });
-            socket.emit('apodos-update', apodos);
-            log.ok(`Admin autenticado: ${socket.id}`);
-        } else {
-            socket.emit('admin-auth', { ok: false });
-            log.warn(`Contrasena incorrecta desde ${socket.id}`);
-        }
-    });
-
-    socket.on('admin-set-config', (newConfig) => {
-        if (!isAdmin) { socket.emit('status', { type: 'error', message: 'No autorizado' }); return; }
-        const rules = {
-            maxQueue: [1,   500],
-            maxWords: [0,   100],
-            maxChars: [0,   500],
-            ttsRate:  [0.5, 3.0],
-            ttsPitch: [0.0, 2.0],
+        const payload = {
+            id: data.msgId,
+            type: 'chat',
+            username: data.uniqueId,
+            nickname: displayName,
+            message: data.comment,
+            profileUrl: data.profilePictureUrl,
+            sinTTS: sinTTS,
+            timestamp: Date.now()
         };
-        for (const [key, [min, max]] of Object.entries(rules)) {
-            if (newConfig[key] !== undefined) {
-                const val = parseFloat(newConfig[key]);
-                if (!isNaN(val) && val >= min && val <= max) globalConfig[key] = val;
+
+        io.to(username).emit('evt-chat', payload);
+
+        // Procesar palabras clave configuradas
+        if (globalConfig.keywords && globalConfig.keywords.length > 0) {
+            const cleanComment = data.comment.toLowerCase().trim();
+            for (const kw of globalConfig.keywords) {
+                if (cleanComment === kw.key.toLowerCase().trim()) {
+                    let replyText = kw.reply.replace(/{usuario}/g, displayName);
+                    setTimeout(() => {
+                        io.to(username).emit('evt-chat', {
+                            id: `kw-${Date.now()}`,
+                            type: 'keyword',
+                            username: 'bot_system',
+                            nickname: '🤖 ASISTENTE',
+                            message: replyText,
+                            profileUrl: '',
+                            sinTTS: false,
+                            timestamp: Date.now()
+                        });
+                    }, 800);
+                    break;
+                }
             }
         }
-        log.ok('Config actualizada:', JSON.stringify(globalConfig));
-        io.emit('config-update', globalConfig);
-        socket.emit('admin-config-saved', globalConfig);
     });
 
-    // Admin: disparar sonido a todos
-    socket.on('admin-play-sound', (soundId) => {
-        if (!isAdmin) return;
-        const valid = ['aplausos','redoble','fanfarria','campana','risas','fail',
-                       'rimshot','suspenso','abucheo','alerta','levelup','moneda',
-                       'gameover','explosion','sirena'];
-        if (!valid.includes(soundId)) return;
-        io.emit('play-sound', soundId);
-        log.ok(`Admin disparó sonido: ${soundId}`);
-    });
-
-    // Admin: enviar mensaje TTS a todos
-    socket.on('admin-tts', (mensaje) => {
-        if (!isAdmin) return;
-        if (typeof mensaje !== 'string' || !mensaje.trim()) return;
-        const texto = mensaje.trim().slice(0, 300);
-        io.emit('admin-mensaje', { texto });
-        log.ok(`Admin TTS: ${texto.slice(0, 60)}`);
-    });
-
-    // ─── Pausar/reanudar página (solo admin) ─────────────────────────────────
-    socket.on('admin-toggle-pause', ({ mensaje }) => {
-        if (!isAdmin) return;
-        globalConfig.pagePaused = !globalConfig.pagePaused;
-        globalConfig.pauseMsg   = (typeof mensaje === 'string') ? mensaje.trim().slice(0, 200) : '';
-        log.ok(`Página ${globalConfig.pagePaused ? 'PAUSADA' : 'REANUDADA'} — msg: "${globalConfig.pauseMsg}"`);
-        io.emit('config-update', globalConfig);
-    });
-
-    // ─── Silenciar/activar bot (solo admin) ──────────────────────────────────
-    socket.on('admin-toggle-mute', () => {
-        if (!isAdmin) return;
-        globalConfig.botMuted = !globalConfig.botMuted;
-        log.ok(`Bot ${globalConfig.botMuted ? 'SILENCIADO' : 'ACTIVADO'}`);
-        io.emit('config-update', globalConfig);
-    });
-
-    // ─── Apodos (solo admin) ──────────────────────────────────────────────────
-    socket.on('admin-set-apodo', ({ username, apodo }) => {
-        if (!isAdmin) { socket.emit('status', { type: 'error', message: 'No autorizado' }); return; }
-        if (typeof username !== 'string' || !username.trim()) return;
-        const key = username.trim().replace(/^@/, '').toLowerCase();
-        const valor = (apodo || '').trim();
-        if (valor) {
-            apodos[key] = valor;
-            log.ok(`Apodo asignado: ${key} → ${valor}`);
-        } else {
-            delete apodos[key];
-            log.ok(`Apodo eliminado: ${key}`);
+    room.connection.on('gift', data => {
+        if (data.giftType === 1 && !data.repeatEnd) {
+            room.giftStreaks.set(data.userId, data);
+            return;
         }
-        saveApodos(apodos);
-        io.to('admins').emit('apodos-update', apodos);
+
+        room.giftStreaks.delete(data.userId);
+        const count = data.repeatCount || 1;
+        const apodos = loadApodos();
+        const displayName = apodos[data.uniqueId] || data.nickname || data.uniqueId;
+
+        const payload = {
+            id: `${data.msgId}-${count}`,
+            type: 'gift',
+            username: data.uniqueId,
+            nickname: displayName,
+            giftId: data.giftId,
+            giftName: data.giftName,
+            giftIcon: data.giftIconUrl,
+            diamondCount: data.diamondCount,
+            repeatCount: count,
+            profileUrl: data.profilePictureUrl,
+            timestamp: Date.now()
+        };
+
+        io.to(username).emit('evt-gift', payload);
     });
 
-    socket.on('admin-get-apodos', () => {
+    room.connection.on('follow', data => {
+        const apodos = loadApodos();
+        const displayName = apodos[data.uniqueId] || data.nickname || data.uniqueId;
+
+        io.to(username).emit('evt-social', {
+            id: `follow-${data.userId}-${Date.now()}`,
+            type: 'follow',
+            username: data.uniqueId,
+            nickname: displayName,
+            profileUrl: data.profilePictureUrl,
+            message: 'se ha suscrito/seguido',
+            timestamp: Date.now()
+        });
+    });
+
+    room.connection.on('like', data => {
+        const now = Date.now();
+        const last = room.lastInteractions.get(`${data.uniqueId}-like`) || 0;
+        if (now - last < 30000) return; // Filtro de spam cada 30s
+        room.lastInteractions.set(`${data.uniqueId}-like`, now);
+
+        const apodos = loadApodos();
+        const displayName = apodos[data.uniqueId] || data.nickname || data.uniqueId;
+
+        io.to(username).emit('evt-social', {
+            id: `like-${data.userId}-${now}`,
+            type: 'like',
+            username: data.uniqueId,
+            nickname: displayName,
+            profileUrl: data.profilePictureUrl,
+            message: 'le dio me gusta al directo',
+            timestamp: now
+        });
+    });
+
+    room.connection.on('share', data => {
+        const now = Date.now();
+        const last = room.lastInteractions.get(`${data.uniqueId}-share`) || 0;
+        if (now - last < 30000) return;
+        room.lastInteractions.set(`${data.uniqueId}-share`, now);
+
+        const apodos = loadApodos();
+        const displayName = apodos[data.uniqueId] || data.nickname || data.uniqueId;
+
+        io.to(username).emit('evt-social', {
+            id: `share-${data.userId}-${now}`,
+            type: 'share',
+            username: data.uniqueId,
+            nickname: displayName,
+            profileUrl: data.profilePictureUrl,
+            message: 'compartió el directo',
+            timestamp: now
+        });
+    });
+
+    room.connection.on('disconnected', () => {
+        log.warn(`TikTok Connection cerrada para @${username}`);
+        io.to(username).emit('status', { connected: false });
+        stopAnuncios(room);
+        room.connection = null;
+    });
+
+    room.connection.on('streamEnd', () => {
+        log.warn(`El directo de @${username} ha finalizado.`);
+        io.to(username).emit('status', { connected: false, error: 'El directo terminó' });
+        stopAnuncios(room);
+        room.connection = null;
+    });
+}
+
+function disconnectTikTok(username) {
+    const room = rooms.get(username);
+    if (room && room.connection) {
+        try {
+            room.connection.disconnect();
+        } catch (e) {
+            log.error(`Error al desconectar manualmente:`, e.message);
+        }
+        stopAnuncios(room);
+        room.connection = null;
+        io.to(username).emit('status', { connected: false });
+        log.info(`Conexión abortada manualmente para @${username}`);
+    }
+}
+
+// ─── Sistema de Anuncios Periódicos ───────────────────────────────────────────
+function startAnuncios(room) {
+    stopAnuncios(room);
+    if (!globalConfig.anuncios || !globalConfig.anuncios.activo) return;
+    if (!globalConfig.anuncios.frases || globalConfig.anuncios.frases.length === 0) return;
+
+    const intervalMs = (globalConfig.anuncios.intervalo || 5) * 60 * 1000;
+    
+    room.anuncioTimer = setInterval(() => {
+        const frases = globalConfig.anuncios.frases;
+        let frase = "";
+
+        if (globalConfig.anuncios.orden === 'aleatorio') {
+            const idx = Math.floor(Math.random() * frases.length);
+            frase = frases[idx];
+        } else {
+            if (room.anuncioIndex >= frases.length) room.anuncioIndex = 0;
+            frase = frases[room.anuncioIndex];
+            room.anuncioIndex++;
+        }
+
+        io.to(room.username).emit('evt-chat', {
+            id: `anuncio-${Date.now()}`,
+            type: 'anuncio',
+            username: 'bot_anuncio',
+            nickname: '📢 AVISO',
+            message: frase,
+            profileUrl: '',
+            sinTTS: false,
+            timestamp: Date.now()
+        });
+    }, intervalMs);
+}
+
+function stopAnuncios(room) {
+    if (room && room.anuncioTimer) {
+        clearInterval(room.anuncioTimer);
+        room.anuncioTimer = null;
+    }
+}
+
+// ─── Control de Websockets (Clientes y Admin) ─────────────────────────────────
+io.on('connection', (socket) => {
+    let currentRoomUsername = null;
+    let isAdmin = false;
+
+    socket.on('auth-admin', (pass) => {
+        if (pass === ADMIN_PASSWORD) {
+            isAdmin = true;
+            socket.join('admins');
+            socket.emit('auth-result', { success: true, config: globalConfig, apodos: loadApodos() });
+            log.info(`Socket ${socket.id} autenticado como ADMINISTRADOR.`);
+        } else {
+            socket.emit('auth-result', { success: false, error: 'Contraseña incorrecta' });
+        }
+    });
+
+    socket.on('join-room', (username) => {
+        if (!username) return;
+        const userClean = username.toLowerCase().trim();
+        currentRoomUsername = userClean;
+        socket.join(userClean);
+
+        const room = getOrCreateRoom(userClean);
+        room.sockets.add(socket.id);
+
+        socket.emit('status', {
+            connected: !!room.connection,
+            username: userClean,
+            roomId: room.connection?.roomId || null
+        });
+    });
+
+    // Acciones exclusivas del administrador
+    socket.on('admin-connect', (targetUser) => {
         if (!isAdmin) return;
-        socket.emit('apodos-update', apodos);
+        if (!targetUser) return;
+        connectTikTok(targetUser.toLowerCase().trim(), socket);
+    });
+
+    socket.on('admin-disconnect', (targetUser) => {
+        if (!isAdmin) return;
+        if (!targetUser) return;
+        disconnectTikTok(targetUser.toLowerCase().trim());
+    });
+
+    socket.on('admin-update-config', (newCfg) => {
+        if (!isAdmin) return;
+        globalConfig = { ...globalConfig, ...newCfg };
+        io.to('admins').emit('config-updated', globalConfig);
+        
+        for (const [_, room] of rooms) {
+            if (room.connection) {
+                startAnuncios(room);
+            }
+        }
+    });
+
+    socket.on('admin-add-apodo', (data) => {
+        if (!isAdmin) return;
+        const { username, apodo } = data;
+        if (!username || !apodo) return;
+        const current = loadApodos();
+        current[username] = apodo;
+        if (saveApodos(current)) {
+            io.to('admins').emit('apodos-updated', current);
+        }
     });
 
     socket.on('admin-delete-apodo', (username) => {
         if (!isAdmin) return;
-        const key = (username || '').trim().replace(/^@/, '').toLowerCase();
-        if (apodos[key]) {
-            delete apodos[key];
-            saveApodos(apodos);
-            log.ok(`Apodo eliminado: ${key}`);
+        const current = loadApodos();
+        if (current[username]) {
+            delete current[username];
+            if (saveApodos(current)) {
+                io.to('admins').emit('apodos-updated', current);
+            }
         }
-        io.to('admins').emit('apodos-update', apodos);
     });
 
-    // ─── Música (solo admin) ──────────────────────────────────────────────────
-    socket.on('admin-music-share', (payload) => {
+    socket.on('admin-play-sound', (data) => {
         if (!isAdmin) return;
-        if (!payload || typeof payload !== 'object') return;
-        log.ok(`Admin música → ${payload.action} "${payload.title || payload.url || ''}"`);
-        io.emit('music-command', payload);
-    });
-
-    // ─── Admin: guardar config de anuncios ───────────────────────────────────
-    socket.on('admin-set-anuncios', (cfg) => {
-        if (!isAdmin) return;
-        if (typeof cfg.activo    === 'boolean') globalConfig.anuncios.activo    = cfg.activo;
-        if (typeof cfg.intervalo === 'number')  globalConfig.anuncios.intervalo = Math.max(1, Math.min(120, cfg.intervalo));
-        if (typeof cfg.orden     === 'string')  globalConfig.anuncios.orden     = cfg.orden;
-        if (Array.isArray(cfg.frases))          globalConfig.anuncios.frases    = cfg.frases.slice(0, 50).map(f => String(f).slice(0, 300));
-        anuncioIndex = 0;
-        startAnuncios();
-        log.ok('Config anuncios actualizada:', JSON.stringify(globalConfig.anuncios));
-        io.emit('config-update', globalConfig);
-    });
-
-    // ─── Admin: guardar keywords ──────────────────────────────────────────────
-    socket.on('admin-set-keywords', (kws) => {
-        if (!isAdmin) return;
-        if (!Array.isArray(kws)) return;
-        globalConfig.keywords = kws.slice(0, 30).map(k => ({
-            palabra:   String(k.palabra  || '').slice(0, 50).toLowerCase().trim(),
-            respuesta: String(k.respuesta || '').slice(0, 200).trim(),
-        })).filter(k => k.palabra && k.respuesta);
-        log.ok('Keywords actualizadas:', globalConfig.keywords.length);
-        io.emit('config-update', globalConfig);
-    });
-
-    // ─── Admin: config VIP y requireGift ─────────────────────────────────────
-    socket.on('admin-set-filtro', (data) => {
-        if (!isAdmin) return;
-        if (typeof data.requireGift === 'boolean') globalConfig.requireGift = data.requireGift;
-        if (Array.isArray(data.vipList)) {
-            globalConfig.vipList = data.vipList.slice(0, 100).map(v => String(v).replace(/^@/,'').trim().toLowerCase()).filter(Boolean);
+        if (currentRoomUsername) {
+            io.to(currentRoomUsername).emit('cmd-play-sound', data);
+        } else {
+            io.emit('cmd-play-sound', data);
         }
-        log.ok('Filtro regalo:', globalConfig.requireGift, 'VIPs:', globalConfig.vipList.length);
-        io.emit('config-update', globalConfig);
+    });
+
+    socket.on('admin-music-control', (data) => {
+        if (!isAdmin) return;
+        if (currentRoomUsername) {
+            io.to(currentRoomUsername).emit('cmd-music', data);
+        } else {
+            io.emit('cmd-music', data);
+        }
     });
 
     socket.on('disconnect', () => {
-        if (currentRoom) leaveRoom(socket, currentRoom);
+        if (currentRoomUsername) {
+            handleSocketLeaveRoom(currentRoomUsername, socket);
+        }
     });
 });
 
-function leaveRoom(socket, username) {
-    socket.leave(username);
+function handleSocketLeaveRoom(username, socket) {
     const room = rooms.get(username);
     if (!room) return;
     room.sockets.delete(socket.id);
@@ -483,16 +480,14 @@ server.listen(PORT, () => {
 // ─── Auto-ping (evita que Render Free pause el servicio) ──────────────────────
 if (process.env.RENDER_EXTERNAL_URL) {
     const https = require('https');
-    const PING_INTERVAL_MS = 10 * 60 * 1000; // cada 10 minutos
+    const PING_INTERVAL_MS = 10 * 60 * 1000;
 
     setInterval(() => {
         const url = `${process.env.RENDER_EXTERNAL_URL}/health`;
         https.get(url, (res) => {
-            log.info(`Auto-ping OK: ${res.statusCode} → ${url}`);
+            log.info(`Auto-ping enviado a ${url} - Status: ${res.statusCode}`);
         }).on('error', (err) => {
-            log.warn(`Auto-ping fallido: ${err.message}`);
+            log.error(`Error en Auto-ping:`, err.message);
         });
     }, PING_INTERVAL_MS);
-
-    log.info(`Auto-ping activado → ${process.env.RENDER_EXTERNAL_URL}/health (cada 10 min)`);
 }
